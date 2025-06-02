@@ -1,0 +1,124 @@
+.context-menu {
+  position: fixed;
+  background: #2d2d2d;
+  border: 1px solid #3d3d3d;
+  border-radius: 4px;
+  padding: 4px 0;
+  min-width: 160px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  display: none;
+}
+
+.context-menu.show {
+  display: block;
+}
+
+.context-menu-item {
+  padding: 6px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #d4d4d4;
+  font-size: 13px;
+  user-select: none;
+}
+
+.context-menu-item:hover {
+  background-color: #3d3d3d;
+}
+
+.context-menu-separator {
+  height: 1px;
+  background-color: #3d3d3d;
+  margin: 4px 0;
+}
+
+.context-menu-item svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0.8;
+}
+
+/* Tabs styling */
+.editor-tabs {
+  display: flex;
+  background-color: #252526;
+  border-bottom: 1px solid #3d3d3d;
+  height: 35px;
+  overflow-x: auto;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.editor-tab {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  height: 100%;
+  background-color: #2d2d2d;
+  border-right: 1px solid #3d3d3d;
+  color: #969696;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  gap: 6px;
+  min-width: 100px;
+  max-width: 200px;
+  position: relative;
+}
+
+.editor-tab.active {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+
+.editor-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #007acc;
+}
+
+.editor-tab:hover:not(.active) {
+  background-color: #333333;
+}
+
+.editor-tab-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.editor-tab-close {
+  opacity: 0.6;
+  padding: 2px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+
+.editor-tab-close:hover {
+  background-color: #464646;
+  opacity: 1;
+}
+
+.editor-tab.modified .editor-tab-title::after {
+  content: '•';
+  margin-left: 4px;
+  color: #007acc;
+}
+
+/* Hide scrollbar but keep functionality */
+.editor-tabs::-webkit-scrollbar {
+  height: 0;
+  background: transparent;
+}

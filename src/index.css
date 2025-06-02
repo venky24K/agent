@@ -86,9 +86,27 @@ body, html {
 .editor {
   flex: 1;
   display: flex;
-  height: 100%;
-  position: relative;
   background-color: #1e1e1e;
+  position: relative;
+  height: calc(100% - 35px); /* Subtract tab height */
+}
+
+.editor-cont.editor {
+  flex: 1;
+  padding: 10px;
+  position: relative;
+  height: calc(100% - 35px); /* Subtract tab height */
+  background-color: #1e1e1e;
+  overflow: hidden;
+}
+
+.editor-area {
+  flex: 1;
+  min-width: 200px;
+  background-color: #1e1e1e;
+  position: relative;
+  display: flex;
+  flex-direction: column;
   font-family: 'Consolas', 'Monaco', monospace;
 }
 

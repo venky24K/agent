@@ -57,6 +57,14 @@ const path = {
 // State
 let currentContent = ''; // Track current editor content
 let isModified = false;
+let saveTimeout = null;
+
+// Track open files
+let openFiles = [];
+let activeFileIndex = -1;
+
+// Context menu state
+let contextMenuTarget = null;
 
 // Save current file
 async function saveCurrentFile() {
@@ -725,34 +733,45 @@ async function handleFileExplorerClick(e) {
              await toggleDirectory(li); // Use toggleDirectory with default (toggle) behavior
         }
     } else if (li.dataset.path) {
-        // For files, open the file (click anywhere on the file item)
-        openFile(li.dataset.path);
+        if (e.button === 2) { // Right click
+          showContextMenu(e, li);
+        } else { // Left click
+          openFile(li.dataset.path);
+        }
     }
 }
 
 // Open file in editor
-async function openFile(filePath) {
+async function openFile(filePath, focus = true) {
   try {
     console.log('Opening file:', filePath);
+    
+    // Check if file is already open
+    const existingIndex = openFiles.findIndex(f => f.path === filePath);
+    if (existingIndex !== -1) {
+      if (focus) {
+        switchToFile(existingIndex);
+      }
+      return true;
+    }
+    
     const content = await window.api.readFile(filePath);
-    currentFilePath = filePath;
-    currentContent = content;
-    editorTextarea.value = content;
-    editorTextarea.readOnly = false;
-    
-    // Update line numbers immediately after setting content
-    updateLineNumbers();
-    
-    // Update window title
     const fileName = await window.api.path.basename(filePath);
-    document.title = `${fileName} - Agent`;
     
-    // Highlight in explorer
-    highlightFileInExplorer(filePath);
+    // Add to open files
+    const fileInfo = {
+      path: filePath,
+      name: fileName,
+      content: content,
+      isModified: false
+    };
     
-    // Reset modified state
-    isModified = false;
+    openFiles.push(fileInfo);
+    if (focus) {
+      switchToFile(openFiles.length - 1);
+    }
     
+    updateTabs();
     console.log('File opened successfully');
     return true;
     
@@ -760,9 +779,98 @@ async function openFile(filePath) {
     console.error('Error opening file:', error);
     const errorMsg = error.message || 'Failed to open file';
     showError('Open File Failed', errorMsg);
-    throw error; // Re-throw to allow caller to handle
-  }  
-  return false;
+    throw error;
+  }
+}
+
+// Switch to a specific file tab
+function switchToFile(index) {
+  if (index < 0 || index >= openFiles.length) return;
+  
+  // Save current content if modified
+  if (activeFileIndex !== -1 && openFiles[activeFileIndex]?.isModified) {
+    openFiles[activeFileIndex].content = editorTextarea.value;
+  }
+  
+  activeFileIndex = index;
+  const file = openFiles[index];
+  
+  currentFilePath = file.path;
+  currentContent = file.content;
+  editorTextarea.value = file.content;
+  editorTextarea.readOnly = false;
+  
+  // Update line numbers
+  updateLineNumbers();
+  
+  // Update window title
+  document.title = `${file.name} - Agent`;
+  
+  // Highlight in explorer
+  highlightFileInExplorer(file.path);
+  
+  // Update tabs
+  updateTabs();
+}
+
+// Close a file tab
+function closeFile(index) {
+  if (index < 0 || index >= openFiles.length) return;
+  
+  const file = openFiles[index];
+  if (file.isModified) {
+    // TODO: Prompt to save changes
+    if (!confirm(`Save changes to ${file.name}?`)) return;
+  }
+  
+  openFiles.splice(index, 1);
+  
+  if (openFiles.length === 0) {
+    // No files left open
+    activeFileIndex = -1;
+    currentFilePath = null;
+    currentContent = '';
+    editorTextarea.value = '';
+    editorTextarea.readOnly = true;
+    document.title = 'Agent';
+  } else {
+    // Switch to nearest tab
+    const newIndex = Math.min(index, openFiles.length - 1);
+    switchToFile(newIndex);
+  }
+  
+  updateTabs();
+}
+
+// Update the tabs UI
+function updateTabs() {
+  const tabsContainer = document.getElementById('editor-tabs');
+  tabsContainer.innerHTML = '';
+  
+  openFiles.forEach((file, index) => {
+    const tab = document.createElement('div');
+    tab.className = `editor-tab${index === activeFileIndex ? ' active' : ''}${file.isModified ? ' modified' : ''}`;
+    
+    const title = document.createElement('span');
+    title.className = 'editor-tab-title';
+    title.textContent = file.name;
+    tab.appendChild(title);
+    
+    const closeBtn = document.createElement('div');
+    closeBtn.className = 'editor-tab-close';
+    closeBtn.innerHTML = '<svg viewBox="0 0 16 16" width="16" height="16"><path fill="currentColor" d="M8 8.707l3.646 3.647.708-.707L8.707 8l3.647-3.646-.707-.708L8 7.293 4.354 3.646l-.707.708L7.293 8l-3.646 3.646.707.708L8 8.707z"/></svg>';
+    tab.appendChild(closeBtn);
+    
+    tab.addEventListener('click', (e) => {
+      if (e.target === closeBtn || closeBtn.contains(e.target)) {
+        closeFile(index);
+      } else {
+        switchToFile(index);
+      }
+    });
+    
+    tabsContainer.appendChild(tab);
+  });
 }
 
 // Highlight file in explorer
@@ -958,8 +1066,87 @@ async function createNewProject() {
 }
 
 // Event Listeners
+// Handle context menu
+function showContextMenu(e, target) {
+  e.preventDefault();
+  
+  const contextMenu = document.getElementById('context-menu');
+  contextMenuTarget = target;
+  
+  // Position the menu
+  contextMenu.style.left = `${e.pageX}px`;
+  contextMenu.style.top = `${e.pageY}px`;
+  contextMenu.classList.add('show');
+  
+  // Close menu when clicking outside
+  const closeMenu = (e) => {
+    if (!contextMenu.contains(e.target)) {
+      contextMenu.classList.remove('show');
+      document.removeEventListener('click', closeMenu);
+    }
+  };
+  
+  setTimeout(() => {
+    document.addEventListener('click', closeMenu);
+  }, 0);
+}
+
+// Handle context menu actions
+async function handleContextMenuAction(action) {
+  const filePath = contextMenuTarget.dataset.path;
+  if (!filePath) return;
+  
+  switch (action) {
+    case 'open':
+      await openFile(filePath);
+      break;
+    case 'copy':
+      // TODO: Implement copy
+      break;
+    case 'cut':
+      // TODO: Implement cut
+      break;
+    case 'paste':
+      // TODO: Implement paste
+      break;
+    case 'rename':
+      const newName = prompt('Enter new name:', contextMenuTarget.dataset.name);
+      if (newName) {
+        try {
+          const dirPath = await window.api.path.dirname(filePath);
+          const newPath = await window.api.path.join(dirPath, newName);
+          await window.api.renameFile(filePath, newPath);
+          await renderFileExplorer(); // Refresh explorer
+        } catch (error) {
+          showError('Rename Failed', error.message);
+        }
+      }
+      break;
+    case 'delete':
+      if (confirm(`Are you sure you want to delete ${contextMenuTarget.dataset.name}?`)) {
+        try {
+          await window.api.deleteFile(filePath);
+          await renderFileExplorer(); // Refresh explorer
+        } catch (error) {
+          showError('Delete Failed', error.message);
+        }
+      }
+      break;
+  }
+}
+
 function setupEventListeners() {
   console.log('Setting up renderer event listeners...');
+  
+  // Context menu setup
+  const contextMenu = document.getElementById('context-menu');
+  contextMenu.addEventListener('click', (e) => {
+    const action = e.target.closest('.context-menu-item')?.dataset.action;
+    if (action) {
+      handleContextMenuAction(action);
+      contextMenu.classList.remove('show');
+    }
+  });
 
   // Check if elements exist before adding listeners
   if (!editorTextarea || !fileExplorer || !lineNumbers || !newProjectBtn || !newProjectEmptyBtn || !openFolderBtn || !openFolderEmptyBtn) {
@@ -988,9 +1175,11 @@ function setupEventListeners() {
     if (currentFilePath && newContent !== currentContent) {
       currentContent = newContent;
       
-      // Show modified indicator
-      if (!document.title.endsWith('*')) {
-        document.title += '*';
+      // Mark file as modified
+      if (activeFileIndex !== -1) {
+        openFiles[activeFileIndex].isModified = true;
+        openFiles[activeFileIndex].content = newContent;
+        updateTabs();
       }
       
       // Trigger save after 1 second of no typing
@@ -998,8 +1187,10 @@ function setupEventListeners() {
       saveTimeout = setTimeout(async () => {
         try {
           await saveCurrentFile();
-          // Remove modified indicator after successful save
-          document.title = document.title.replace(/\*$/, '');
+          if (activeFileIndex !== -1) {
+            openFiles[activeFileIndex].isModified = false;
+            updateTabs();
+          }
         } catch (error) {
           console.error('Error saving file:', error);
           showError('Save Failed', error.message);

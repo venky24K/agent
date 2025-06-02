@@ -6,6 +6,7 @@
   <title>Agent</title>
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline';">
   <link rel="stylesheet" href="index.css" />
+  <link rel="stylesheet" href="context-menu.css" />
 </head>
 <body>
   <div class="app">
@@ -71,11 +72,43 @@
 
         <!-- Editor -->
         <div class="editor-area">
+          <!-- Editor Tabs -->
+          <div class="editor-tabs" id="editor-tabs"></div>
+          
           <!-- Editor Content -->
           <div class="editor">
             <div class="editor-content">
               <div class="line-numbers" id="line-numbers">1</div>
               <textarea spellcheck="false" id="editor-textarea">&lt;!-- Open a file to start editing --&gt;</textarea>
+            </div>
+          </div>
+          
+          <!-- Context Menu -->
+          <div class="context-menu" id="context-menu">
+            <div class="context-menu-item" data-action="open">
+              <svg viewBox="0 0 16 16"><path fill="currentColor" d="M10.5 3L8 .5 5.5 3h5zM15 14V4H1v10h14zM2 5h12v8H2V5z"/></svg>
+              Open
+            </div>
+            <div class="context-menu-item" data-action="copy">
+              <svg viewBox="0 0 16 16"><path fill="currentColor" d="M4 2v10h10V2H4zm9 9H5V3h8v8zm-3-9H2v10h1V4h7V2z"/></svg>
+              Copy
+            </div>
+            <div class="context-menu-item" data-action="cut">
+              <svg viewBox="0 0 16 16"><path fill="currentColor" d="M5.5 8L2 11.5V14h2.5L8 10.5l3.5 3.5H14v-2.5L10.5 8 14 4.5V2h-2.5L8 5.5 4.5 2H2v2.5L5.5 8zM3 3h1.5L8 6.5 11.5 3H13v1.5L9.5 8 13 11.5V13h-1.5L8 9.5 4.5 13H3v-1.5L6.5 8 3 4.5V3z"/></svg>
+              Cut
+            </div>
+            <div class="context-menu-item" data-action="paste">
+              <svg viewBox="0 0 16 16"><path fill="currentColor" d="M11 2H5v2H3v10h10V4h-2V2zM4 13V5h8v8H4zm6-10H6V3h4v1z"/></svg>
+              Paste
+            </div>
+            <div class="context-menu-separator"></div>
+            <div class="context-menu-item" data-action="rename">
+              <svg viewBox="0 0 16 16"><path fill="currentColor" d="M13.23 1h-1.46L3.52 9.25l-.16.22L1 13.59 2.41 15l4.12-2.36.22-.16L15 4.23V2.77L13.23 1zM2.41 13.59l1.51-3 1.45 1.45-2.96 1.55zm3.83-2.06L4.47 9.76l8-8 1.77 1.77-8 8z"/></svg>
+              Rename
+            </div>
+            <div class="context-menu-item" data-action="delete">
+              <svg viewBox="0 0 16 16"><path fill="currentColor" d="M10 2h3v1h-1v10c0 .55-.45 1-1 1H4c-.55 0-1-.45-1-1V3H2V2h3V1h5v1zm-7 2v9h9V4H3zm2 2h1v5H5V6zm2 0h1v5H7V6zm2 0h1v5H9V6z"/></svg>
+              Delete
             </div>
           </div>
         </div>

@@ -35,8 +35,6 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('file-opened', handler);
     return () => ipcRenderer.removeListener('file-opened', handler);
   },
-  
-  // Listen for global shortcuts
   onGlobalShortcut: (callback) => {
     const handler = (_, action) => callback(action);
     ipcRenderer.on('global-shortcut', handler);
@@ -50,6 +48,12 @@ contextBridge.exposeInMainWorld('api', {
     join: (...args) => ipcRenderer.invoke('path-join', args),
     extname: (p) => ipcRenderer.invoke('path-extname', p),
     sep: () => ipcRenderer.invoke('path-sep')
+  },
+  
+  // Clipboard operations
+  clipboard: {
+    readText: () => ipcRenderer.invoke('clipboard-read-text'),
+    writeText: (text) => ipcRenderer.invoke('clipboard-write-text', text)
   },
   
   // Remove listeners
