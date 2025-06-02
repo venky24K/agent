@@ -43,32 +43,68 @@
           </div>
           <div id="file-explorer" class="file-explorer">
             <div class="empty-state">
-              <p>No folder opened</p>
-              <div class="empty-state-actions">
-                <button id="new-project-empty-btn" class="btn">
-                  <svg width="14" height="14" viewBox="0 0 24 24" style="margin-right: 6px;">
-                    <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-                  </svg>
-                  New Project
-                </button>
-                <button id="open-folder-empty-btn" class="btn">
-                  <svg width="14" height="14" viewBox="0 0 24 24" style="margin-right: 6px;">
-                    <path fill="currentColor" d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
-                  </svg>
-                  Open Folder
-                </button>
+              <div class="empty-state-content">
+                <div class="empty-state-icon">📁</div>
+                <h3>No Folder Opened</h3>
+                <p>Open a folder to start editing</p>
+                <div class="empty-state-actions">
+                  <button id="open-folder-empty-btn" class="btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" style="margin-right: 6px;">
+                      <path fill="currentColor" d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                    </svg>
+                    Open Folder
+                  </button>
+                  <button id="new-project-empty-btn" class="btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" style="margin-right: 6px;">
+                      <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    New Project
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
+        <!-- Gripper between Explorer and Editor -->
+        <div class="gripper" id="gripper-explorer-editor"></div>
+
         <!-- Editor -->
         <div class="editor-area">
           <!-- Editor Content -->
           <div class="editor">
+            <div class="line-numbers" id="line-numbers"></div>
             <textarea spellcheck="false" id="editor-textarea">&lt;!-- Open a file to start editing --&gt;</textarea>
           </div>
         </div>
+
+        <!-- Gripper between Editor and Chat -->
+        <div class="gripper" id="gripper-editor-chat"></div>
+
+        <!-- Chat Panel (New) -->
+        <div class="chat-panel">
+          <div class="chat-header">
+            <span>CHAT</span>
+          </div>
+          <div class="chat-body">
+            <!-- Chat messages will go here -->
+            <div class="chat-messages"></div>
+          </div>
+          <div class="chat-input-container">
+            <textarea
+              id="chat-input"
+              class="chat-input"
+              placeholder="Type a message..."
+              rows="1"
+            ></textarea>
+            <button id="chat-send" class="chat-send-button">
+              <svg viewBox="0 0 24 24" width="24" height="24">
+                <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>

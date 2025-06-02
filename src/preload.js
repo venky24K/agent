@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('api', {
   // Dialogs
   openDirectory: createIpcInvoke('open-directory-dialog'),
   createProject: createIpcInvoke('create-project-dialog'),
+  createProjectFile: createIpcInvoke('create-project-file'),
   
   // File operations
   saveFile: (filePath, content) => ipcRenderer.invoke('save-file', filePath, content),
@@ -33,6 +34,13 @@ contextBridge.exposeInMainWorld('api', {
     const handler = (_, content, filePath) => callback(content, filePath);
     ipcRenderer.on('file-opened', handler);
     return () => ipcRenderer.removeListener('file-opened', handler);
+  },
+  
+  // Listen for global shortcuts
+  onGlobalShortcut: (callback) => {
+    const handler = (_, action) => callback(action);
+    ipcRenderer.on('global-shortcut', handler);
+    return () => ipcRenderer.removeListener('global-shortcut', handler);
   },
   
   // Path operations (handled in main process)
