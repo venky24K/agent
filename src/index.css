@@ -92,7 +92,16 @@ body, html {
   font-family: 'Consolas', 'Monaco', monospace;
 }
 
+.editor-content {
+  flex: 1;
+  display: flex;
+  position: relative;
+  background-color: #1e1e1e;
+  overflow: hidden;
+}
+
 .line-numbers {
+  min-width: 40px;
   padding: 8px 8px 8px 0;
   background-color: #1e1e1e;
   color: #858585;
@@ -102,12 +111,13 @@ body, html {
   line-height: 1.5;
   border-right: 1px solid #333;
   overflow-y: hidden;
-  white-space: nowrap;
+  white-space: pre;
+  font-family: 'Consolas', 'Monaco', monospace;
 }
 
 #editor-textarea {
   flex: 1;
-  padding: 8px;
+  padding: 8px 8px 8px 16px;
   background-color: #1e1e1e;
   color: #d4d4d4;
   border: none;
@@ -118,6 +128,7 @@ body, html {
   white-space: pre;
   overflow-y: auto;
   tab-size: 2;
+  font-family: inherit;
 }
 
 /* Explorer */
