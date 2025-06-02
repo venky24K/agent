@@ -190,6 +190,10 @@ function init() {
     const placeholderText = 'Open a file or folder to start editing (Cmd+O or Ctrl+O)';
     editorTextarea.placeholder = placeholderText;
     console.log('Editor placeholder set to:', placeholderText);
+    
+    // Set initial content to empty string to ensure line numbers show up
+    editorTextarea.value = '';
+    updateLineNumbers(); // This will show the initial line number
   }
 
   // Initialize line numbers - only if element is found
@@ -736,6 +740,9 @@ async function openFile(filePath) {
     editorTextarea.value = content;
     editorTextarea.readOnly = false;
     
+    // Update line numbers immediately after setting content
+    updateLineNumbers();
+    
     // Update window title
     const fileName = await window.api.path.basename(filePath);
     document.title = `${fileName} - Agent`;
@@ -972,34 +979,32 @@ function setupEventListeners() {
   
   // Editor change handler
   editorTextarea.addEventListener('input', async (e) => {
-    if (!currentFilePath) return;
-    
     const newContent = e.target.value;
-    isModified = newContent !== currentContent;
     
-    // Update line numbers
+    // Update line numbers immediately on content change
     updateLineNumbers();
     
-    // Auto-save after a short delay
-    if (isModified) {
-      clearTimeout(window.saveTimeout);
-      window.saveTimeout = setTimeout(async () => {
-        try {
-          await window.api.writeFile(currentFilePath, newContent);
-          currentContent = newContent;
-          isModified = false;
-          // Show saved indicator (you could add a subtle UI indicator here)
-          document.title = document.title.replace(/\*?$/, '');
-        } catch (error) {
-          console.error('Error saving file:', error);
-          showError('Save Failed', error.message);
-        }
-      }, 500);
+    // Only handle auto-save if we have a current file
+    if (currentFilePath && newContent !== currentContent) {
+      currentContent = newContent;
       
       // Show modified indicator
       if (!document.title.endsWith('*')) {
         document.title += '*';
       }
+      
+      // Trigger save after 1 second of no typing
+      if (saveTimeout) clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(async () => {
+        try {
+          await saveCurrentFile();
+          // Remove modified indicator after successful save
+          document.title = document.title.replace(/\*$/, '');
+        } catch (error) {
+          console.error('Error saving file:', error);
+          showError('Save Failed', error.message);
+        }
+      }, 1000);
     }
   });
   
