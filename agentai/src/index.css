@@ -1,0 +1,645 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html {
+  height: 100%;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+:root {
+  --bg-color: #1e1e1e;
+  --sidebar-bg: #252526;
+  --text-color: #cccccc;
+  --text-muted: #858585;
+  --accent-color: #007acc;
+  --hover-bg: rgba(90, 93, 94, 0.31);
+  --active-bg: #37373d;
+  --active-text: #ffffff;
+  --border-color: #3c3c3c;
+  --scrollbar-thumb: #4a4a4a;
+  --scrollbar-thumb-hover: #5a5a5a;
+  --error-color: #f14c4c;
+  --success-color: #4caf50;
+  --warning-color: #ff9800;
+  --info-color: #2196f3;
+  --tree-indent: 16px;
+  --tree-item-height: 24px;
+  --tree-padding: 4px;
+}
+
+.app {
+  display: flex;
+  height: 100vh;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+/* Sidebar */
+.sidebar {
+  width: 50px;
+  background-color: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 10px;
+}
+
+.icon {
+  margin: 20px 0;
+  width: 40px;
+  height: 40px;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.icon:hover {
+  background-color: var(--hover-bg);
+  background-color: #333;
+  border-radius: 6px;
+}
+
+/* Workspace */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top area: Explorer + Editor */
+.top-area {
+  flex: 1;
+  display: flex;
+}
+
+/* Explorer */
+.explorer {
+  width: 250px;
+  background-color: #252526;
+  color: #cccccc;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-right: 1px solid #1e1e1e;
+}
+
+.explorer-header {
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #bbbbbb;
+  border-bottom: 1px solid #1e1e1e;
+  user-select: none;
+}
+
+.explorer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  color: #bbbbbb;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.icon-button:hover {
+  background-color: rgba(90, 93, 94, 0.3);
+  color: #ffffff;
+}
+
+.icon-button svg {
+  pointer-events: none;
+}
+
+.file-explorer {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+  color: var(--text-color);
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  height: 100%;
+  position: relative;
+}
+
+.file-explorer ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  padding-left: 0;
+  overflow: hidden;
+}
+
+.file-explorer > .tree-list {
+  padding-left: 0;
+}
+
+.file-explorer li {
+  position: relative;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+  line-height: 1.8;
+}
+
+.file-explorer .tree-item {
+  display: flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin: 1px 4px;
+  transition: background-color 0.1s ease;
+  height: 24px;
+  box-sizing: border-box;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-explorer .tree-item:hover {
+  background-color: var(--hover-bg);
+}
+
+.file-explorer .tree-item.active {
+  background-color: var(--active-bg);
+  color: var(--active-text);
+}
+
+.file-explorer .tree-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  flex-shrink: 0;
+  font-family: 'Segoe UI Symbol', 'Segoe MDL2 Assets', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  color: #519aba; /* Default file icon color */
+  text-align: center;
+  text-align: center;
+  line-height: 1;
+}
+
+.file-explorer .tree-item-name {
+  margin-left: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+}
+
+.file-explorer .tree-item-arrow {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+  opacity: 0.7;
+  margin-right: 2px;
+  font-size: 10px;
+  color: var(--text-color);
+  flex-shrink: 0;
+}
+
+.file-explorer .tree-item-arrow.collapsed {
+  transform: rotate(-90deg);
+}
+
+.file-explorer .tree-item-arrow.hidden {
+  visibility: hidden;
+  width: 0;
+  margin: 0;
+}
+
+.file-explorer .tree-children {
+  padding-left: 12px;
+  margin-left: 4px;
+  border-left: 1px solid var(--border-color);
+  display: block;
+  transition: height 0.15s ease;
+}
+
+.file-explorer .tree-children.collapsed {
+  display: none;
+}
+
+/* File type icons */
+.file-icon {
+  color: #519aba; /* Default blue for files */
+  font-family: 'Segoe MDL2 Assets', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;
+}
+
+.folder-icon {
+  color: #e2c08d; /* Yellow for folders */
+  font-family: 'Segoe MDL2 Assets', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;
+}
+
+.tree-item-arrow {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 4px;
+  transition: transform 0.2s ease;
+  font-size: 10px;
+  color: #858585;
+}
+
+.tree-item-arrow.collapsed {
+  transform: rotate(-90deg);
+}
+
+.tree-item-arrow.hidden {
+  visibility: hidden;
+}
+
+.tree-children {
+  padding-left: 16px;
+  overflow: hidden;
+  transition: max-height 0.2s ease;
+}
+
+.loading {
+  padding: 8px 16px;
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 12px;
+}
+
+.empty-folder {
+  padding: 8px 16px;
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 12px;
+}
+
+.error-message {
+  padding: 8px 16px;
+  color: var(--error-color);
+  font-size: 12px;
+  background-color: rgba(241, 76, 76, 0.1);
+  margin: 4px 8px;
+  border-radius: 4px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* File type specific colors */
+.file-icon[data-ext=".js"],
+.file-icon[data-ext=".jsx"],
+.file-icon[data-ext=".ts"],
+.file-icon[data-ext=".tsx"] {
+  color: #f1e05a; /* Yellow for JavaScript/TypeScript */
+}
+
+.file-icon[data-ext=".html"],
+.file-icon[data-ext=".htm"] {
+  color: #e34c26; /* Orange for HTML */
+}
+
+.file-icon[data-ext=".css"],
+.file-icon[data-ext=".scss"],
+.file-icon[data-ext=".sass"] {
+  color: #563d7c; /* Purple for CSS */
+}
+
+.file-icon[data-ext=".json"] {
+  color: #f5de19; /* Yellow for JSON */
+}
+
+.file-icon[data-ext=".md"],
+.file-icon[data-ext=".markdown"] {
+  color: #42a5f5; /* Blue for Markdown */
+}
+
+/* Loading state */
+.file-explorer .loading {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 12px;
+  padding-left: 24px !important;
+}
+
+/* Empty folder message */
+.file-explorer .empty-folder {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 12px;
+  padding-left: 24px !important;
+}
+
+/* Error state */
+.file-explorer .error-message {
+  color: #f14c4c;
+  font-size: 12px;
+  padding-left: 24px !important;
+}
+
+/* Active state for tree items */
+.file-explorer .tree-item:active {
+  opacity: 0.8;
+}
+
+/* Focus state for accessibility */
+.file-explorer .tree-item:focus {
+  outline: 2px solid var(--accent-color);
+  outline-offset: -2px;
+}
+
+/* Scrollbar styling */
+.file-explorer::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.file-explorer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.file-explorer::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+.file-explorer::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 2rem;
+  user-select: none;
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.empty-state p {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.1rem;
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.empty-state-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 220px;
+}
+
+.empty-state .btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.empty-state .btn:hover {
+  background-color: #0066cc;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.empty-state .btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.empty-state .btn:focus-visible {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 2px;
+}
+
+.empty-state .btn .icon {
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+/* Dark mode specific styles */
+@media (prefers-color-scheme: dark) {
+  .empty-state .btn {
+    background-color: #1a73e8;
+  }
+  
+  .empty-state .btn:hover {
+    background-color: #1967d2;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0e639c;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 3px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.btn:hover {
+  background: #1177bb;
+}
+
+.btn svg {
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.file {
+  font-size: 13px;
+  padding: 4px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: #cccccc;
+  border-radius: 3px;
+  margin: 0 4px;
+}
+
+.file:hover {
+  background-color: #2a2d2e;
+}
+
+.file.active {
+  background-color: #37373d;
+}
+
+.file-icon {
+  margin-right: 6px;
+  width: 16px;
+  text-align: center;
+}
+
+/* Editor Area */
+.editor-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Editor area takes full height without tabs */
+.editor-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Editor */
+.editor {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  background: #1e1e1e;
+}
+
+.editor textarea {
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  border: none;
+  background: transparent;
+  color: #d4d4d4;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+  tab-size: 2;
+  white-space: pre;
+  overflow: auto;
+  box-sizing: border-box;
+}
+
+.editor textarea:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #252526;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3e3e42;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+/* Editor */
+.editor {
+  flex: 1;
+  padding: 10px;
+  background-color: #1e1e1e;
+}
+
+.editor textarea {
+  width: 100%;
+  height: 100%;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border: none;
+  outline: none;
+  resize: none;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Terminal */
+.terminal {
+  height: 150px;
+  background-color: #1e1e1e;
+  border-top: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+}
+
+.terminal-header {
+  height: 30px;
+  background-color: #2d2d2d;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  font-size: 13px;
+  border-bottom: 1px solid #333;
+}
+
+.terminal-body {
+  flex: 1;
+  padding: 10px;
+  font-family: monospace;
+  font-size: 13px;
+  overflow-y: auto;
+}

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Agent</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline';">
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- Explorer -->
+      <div class="icon" title="Explorer">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+          <path d="M10 4H4v16h16V10h-6V4zM12 4v6h6" stroke="currentColor" stroke-width="2" fill="none"/>
+        </svg>
+      </div>
+    
+    </div>
+
+    <!-- Main workspace -->
+    <div class="workspace">
+      <!-- Explorer + Editor -->
+      <div class="top-area">
+        <!-- Explorer -->
+        <div class="explorer">
+          <div class="explorer-header">
+            <span>EXPLORER</span>
+            <div class="explorer-actions">
+              <button id="new-project-btn" class="icon-button" title="New Project">
+                <svg width="12" height="12" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                </svg>
+              </button>
+              <button id="open-folder-btn" class="icon-button" title="Open Folder">
+                <svg width="12" height="12" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div id="file-explorer" class="file-explorer">
+            <div class="empty-state">
+              <p>No folder opened</p>
+              <div class="empty-state-actions">
+                <button id="new-project-empty-btn" class="btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" style="margin-right: 6px;">
+                    <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                  </svg>
+                  New Project
+                </button>
+                <button id="open-folder-empty-btn" class="btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" style="margin-right: 6px;">
+                    <path fill="currentColor" d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                  </svg>
+                  Open Folder
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Editor -->
+        <div class="editor-area">
+          <!-- Editor Content -->
+          <div class="editor">
+            <textarea spellcheck="false" id="editor-textarea">&lt;!-- Open a file to start editing --&gt;</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>
