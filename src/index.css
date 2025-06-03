@@ -166,11 +166,11 @@ body, html {
 }
 
 .explorer-header {
-  height: 35px;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 15px;
+  padding: 25px 15px 0;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -332,16 +332,80 @@ body, html {
 }
 
 /* File type icons */
+.file-icon,
+.folder-icon {
+  font-family: 'FiraCode Nerd Font', 'JetBrainsMono Nerd Font', 'CaskaydiaCove Nerd Font', 'DroidSansMono Nerd Font', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Apple Color Emoji', 'Noto Color Emoji', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  display: inline-block;
+  min-width: 18px;
+  text-align: center;
+  margin-right: 6px;
+  vertical-align: middle;
+  font-weight: normal;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 .file-icon {
-  color: #519aba; /* Default blue for files */
-  font-family: 'Segoe MDL2 Assets', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 16px;
+  color: #6d8086; /* Muted blue-gray for files */
 }
 
 .folder-icon {
   color: #e2c08d; /* Yellow for folders */
-  font-family: 'Segoe MDL2 Assets', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 16px;
+}
+
+/* Specific file type colors */
+.file-icon[data-ext=".js"],
+.file-icon[data-ext=".jsx"],
+.file-icon[data-ext=".ts"],
+.file-icon[data-ext=".tsx"] {
+  color: #519aba; /* Blue for JavaScript/TypeScript */
+}
+
+.file-icon[data-ext=".html"],
+.file-icon[data-ext=".htm"] {
+  color: #e34c26; /* Orange for HTML */
+}
+
+.file-icon[data-ext=".css"],
+.file-icon[data-ext=".scss"],
+.file-icon[data-ext=".sass"] {
+  color: #2965f1; /* Blue for CSS */
+}
+
+.file-icon[data-ext=".json"] {
+  color: #f5de19; /* Yellow for JSON */
+}
+
+.file-icon[data-ext=".md"],
+.file-icon[data-ext=".markdown"] {
+  color: #6e5494; /* Purple for Markdown */
+}
+
+/* Folder specific styles */
+.tree-item[data-type="directory"] > .tree-item-icon {
+  color: #e2c08d; /* Yellow for folders */
+}
+
+/* Make sure the arrow icons are properly aligned */
+.tree-item-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  transition: transform 0.2s ease;
+  color: #6d8086;
+}
+
+.tree-item-arrow.collapsed {
+  transform: rotate(-90deg);
+}
+
+.tree-item-arrow.hidden {
+  visibility: hidden;
 }
 
 .tree-item-arrow {
@@ -650,7 +714,7 @@ body, html {
   text-align: right;
   padding: 8px 4px;
   font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.5;
   user-select: none;
   border-right: 1px solid #333;
@@ -658,21 +722,20 @@ body, html {
 }
 
 #editor-textarea {
-  position: absolute;
-  left: 40px;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  padding: 8px;
-  background-color: #1e1e1e;
-  color: #d4d4d4;
-  font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 14px;
-  line-height: 1.5;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  padding: 10px;
   border: none;
   resize: none;
+  background-color: transparent;
+  color: #f8f8f2;
+  font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+  line-height: 1.5;
   outline: none;
   white-space: pre;
+  overflow: auto;
   tab-size: 2;
 }
 

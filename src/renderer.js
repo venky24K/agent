@@ -291,38 +291,61 @@ async function getFileIcon(fileName) {
     const ext = await path.extname(fileName);
     const extLower = ext.toLowerCase();
     
+    // Nerd Fonts icons for common file types
     const iconMap = {
-      '.js': '',
+      // File types
+      '.js': '',
       '.jsx': '',
       '.ts': '',
       '.tsx': '',
-      '.html': '',
-      '.css': '',
+      '.html': '',
+      '.css': '',
       '.scss': '',
       '.sass': '',
-      '.json': '',
-      '.md': '',
-      '.markdown': '',
+      '.json': 'ﬥ',
+      '.md': '',
+      '.markdown': '',
       '.gitignore': '',
       '.gitmodules': '',
       '.gitattributes': '',
       '.gitkeep': '',
       '.git': '',
-      '.png': '',
-      '.jpg': '',
-      '.jpeg': '',
-      '.gif': '',
-      '.svg': '',
-      '.ico': '',
-      '.pdf': '',
-      '.zip': '',
-      '.gz': '',
-      '.tar': '',
-      '.xz': '',
-      '.exe': '',
-      '.bat': '',
-      '.sh': '',
-      '.py': '',
+      
+      // Images
+      '.png': '',
+      '.jpg': '',
+      '.jpeg': '',
+      '.gif': '',
+      '.svg': '',
+      '.ico': '',
+      '.bmp': '',
+      '.webp': '',
+      
+      // Documents
+      '.pdf': '',
+      '.doc': '',
+      '.docx': '',
+      '.xls': '',
+      '.xlsx': '',
+      '.ppt': '',
+      '.pptx': '',
+      
+      // Archives
+      '.zip': '',
+      '.gz': '',
+      '.tar': '',
+      '.xz': '',
+      '.rar': '',
+      '.7z': '',
+      
+      // Executables
+      '.exe': '',
+      '.bat': '',
+      '.sh': '',
+      '.ps1': '',
+      
+      // Programming languages
+      '.py': '',
       '.java': '',
       '.c': '',
       '.h': '',
@@ -331,26 +354,71 @@ async function getFileIcon(fileName) {
       '.go': '',
       '.rs': '',
       '.php': '',
-      '.rb': '',
+      '.rb': '',
       '.swift': '',
       '.kt': '',
       '.dart': '',
       '.lua': '',
       '.sql': '',
-      '.yaml': '',
-      '.yml': '',
-      '.toml': '',
-      '.xml': '',
+      '.yaml': '',
+      '.yml': '',
+      '.toml': '',
+      '.xml': '',
+      
+      // Other
       '.log': '',
       '.txt': '',
       '.lock': '',
-      '.env': ''
+      '.env': '',
+      '.dockerfile': '',
+      '.dockerignore': '',
+      '.editorconfig': '',
+      '.babelrc': 'ﬥ',
+      '.eslintrc': '',
+      '.prettierrc': '',
+      '.npmrc': '',
+      '.yarnrc': '',
+      '.bowerrc': '',
+      '.travis.yml': '',
+      '.gitlab-ci.yml': '',
+      '.github': '',
+      '.gitignore_global': '',
+      '.npmignore': '',
+      '.nvmrc': '',
+      '.node-version': '',
+      '.editorconfig': '',
+      '.browserslistrc': '',
+      '.prettierignore': '',
+      '.eslintignore': '',
+      '.stylelintrc': '',
+      '.stylelintignore': '',
+      '.babelrc.js': 'ﬥ',
+      '.babelrc.json': 'ﬥ',
+      '.babel.config.js': 'ﬥ',
+      '.babel.config.json': 'ﬥ',
+      '.eslintrc.js': '',
+      '.eslintrc.json': '',
+      '.eslintrc.yml': '',
+      '.eslintrc.yaml': '',
+      '.eslintignore': '',
+      '.prettierrc.js': '',
+      '.prettierrc.json': '',
+      '.prettierrc.yml': '',
+      '.prettierrc.yaml': '',
+      '.prettierrc.toml': '',
+      '.prettierignore': '',
+      '.stylelintrc.js': '',
+      '.stylelintrc.json': '',
+      '.stylelintrc.yml': '',
+      '.stylelintrc.yaml': '',
+      '.stylelintrc.toml': '',
+      '.stylelintignore': ''
     };
     
-    return iconMap[extLower] || '📄';
+    return iconMap[extLower] || ''; // Default file icon
   } catch (error) {
     console.error('Error getting file icon:', error);
-    return '📄';
+    return ''; // Default file icon on error
   }
 }
 
@@ -376,7 +444,7 @@ async function createTreeItem(name, fullPath, isDirectory, depth = 0) {
   icon.className = isDirectory ? 'tree-item-icon folder-icon' : 'tree-item-icon file-icon';
   
   try {
-    const iconChar = isDirectory ? '📁' : await getFileIcon(fullPath);
+    const iconChar = isDirectory ? '' : await getFileIcon(fullPath); //  is Nerd Fonts folder icon
     icon.textContent = iconChar;
      if (!isDirectory) { // Add data attribute for file type icon coloring
        const ext = await path.extname(fullPath);
