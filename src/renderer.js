@@ -212,35 +212,77 @@ function init() {
   }
 
   setupEventListeners(); // Call setupEventListeners after initial empty state is set
-  initializeChat(); // Initialize chat after other setup
+  
+  // Initialize chat after all other setup is complete
+  const chatMessages = document.getElementById('chat-messages');
+  if (chatMessages) {
+    initializeChat();
+  } else {
+    console.warn('Chat messages container not found, skipping chat initialization.');
+  }
 }
 
 // Update empty state visibility
 function updateEmptyState(containerId, isEmpty) {
   const containerEl = document.getElementById(containerId);
-   if (!containerEl) {
-     console.error(`Container element with id ${containerId} not found`);
-     return;
-   }
+  if (!containerEl) {
+    console.error(`Container element with id ${containerId} not found`);
+    return;
+  }
 
-   // Find the empty state element within the container
-   const emptyState = containerEl.querySelector('.empty-state');
-   if (!emptyState) {
-     console.error('Empty state element not found in container.');
-     return;
-   }
+  // Find or create the empty state element
+  let emptyState = containerEl.querySelector('.empty-state');
+  if (!emptyState) {
+    console.log('Creating empty state element...');
+    emptyState = document.createElement('div');
+    emptyState.className = 'empty-state';
+    emptyState.innerHTML = `
+      <div class="empty-state-content">
+        <div class="empty-state-icon">📁</div>
+        <h3>No Folder Opened</h3>
+        <p>Open a folder to start editing</p>
+        <div class="empty-state-actions">
+          <button id="open-folder-empty-btn" class="btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" style="margin-right: 6px;">
+              <path fill="currentColor" d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+            </svg>
+            Open Folder
+          </button>
+          <button id="new-project-empty-btn" class="btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" style="margin-right: 6px;">
+              <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+            </svg>
+            New Project
+          </button>
+        </div>
+      </div>
+    `;
+    containerEl.appendChild(emptyState);
 
-   if (isEmpty) {
-     // Show the empty state
-     emptyState.style.display = 'flex';
-     // Make the container focusable only when empty state is shown
-     containerEl.setAttribute('tabindex', '0');
-   } else {
-     // Hide the empty state
-     emptyState.style.display = 'none';
-     // Remove tabindex when not in empty state
-     containerEl.removeAttribute('tabindex');
-   }
+    // Set up event listeners for the new buttons
+    const openFolderEmptyBtn = emptyState.querySelector('#open-folder-empty-btn');
+    const newProjectEmptyBtn = emptyState.querySelector('#new-project-empty-btn');
+
+    if (openFolderEmptyBtn) {
+      openFolderEmptyBtn.addEventListener('click', openFolder);
+    }
+
+    if (newProjectEmptyBtn) {
+      newProjectEmptyBtn.addEventListener('click', createNewProject);
+    }
+  }
+
+  if (isEmpty) {
+    // Show the empty state
+    emptyState.style.display = 'flex';
+    // Make the container focusable only when empty state is shown
+    containerEl.setAttribute('tabindex', '0');
+  } else {
+    // Hide the empty state
+    emptyState.style.display = 'none';
+    // Remove tabindex when not in empty state
+    containerEl.removeAttribute('tabindex');
+  }
 }
 
 // Helper function to get file icon based on extension
@@ -373,7 +415,12 @@ async function createTreeItem(name, fullPath, isDirectory, depth = 0) {
       e.stopPropagation();
       
       if (!isDirectory) {
-        openFile(fullPath);
+        try {
+          await openFile(fullPath);
+        } catch (error) {
+          console.error('Error opening file:', error);
+          showError('Open File Failed', error.message);
+        }
       } else {
          await toggleDirectory(li); // Await toggleDirectory
       }
@@ -506,13 +553,16 @@ async function loadDirectoryContents(dirPath, depth = 0, parentElement = null) {
       }
       
       try {
-        const fullPath = await window.api.path.join(dirPath, file.name);
-        // Pass the correct depth to createTreeItem
-        const item = await createTreeItem(file.name, fullPath, file.isDirectory, depth);
+        // Ensure we have the full path
+        const fullPath = file.path || await window.api.path.join(dirPath, file.name);
+        console.log('Creating tree item for:', fullPath, 'isDirectory:', file.isDirectory);
         
-        if (file.isDirectory) {
+        // Pass the correct depth to createTreeItem
+        const item = await createTreeItem(file.name, fullPath, file.isDirectory === true, depth);
+        
+        if (file.isDirectory === true) {
           directories.push(item);
-        } else {
+        } else if (file.isFile === true) {
           fileItems.push(item);
         }
       } catch (error) {
@@ -727,16 +777,25 @@ async function handleFileExplorerClick(e) {
     if (!li) return;
 
     if (li.dataset.type === 'directory') {
-        // Toggle directory ONLY if the arrow is clicked
+        // If clicking the arrow, toggle the directory
         const arrow = treeItem.querySelector('.tree-item-arrow');
         if (arrow && (e.target === arrow || arrow.contains(e.target))) {
-             await toggleDirectory(li); // Use toggleDirectory with default (toggle) behavior
+            await toggleDirectory(li);
         }
-    } else if (li.dataset.path) {
+        // If clicking anywhere else on the directory item, just toggle it
+        else if (e.target !== arrow && !arrow.contains(e.target)) {
+            await toggleDirectory(li);
+        }
+    } else if (li.dataset.path && li.dataset.type === 'file') {
         if (e.button === 2) { // Right click
-          showContextMenu(e, li);
+            showContextMenu(e, li);
         } else { // Left click
-          openFile(li.dataset.path);
+            try {
+                await openFile(li.dataset.path);
+            } catch (error) {
+                console.error('Error opening file:', error);
+                showError('Open File Failed', error.message);
+            }
         }
     }
 }
@@ -744,7 +803,7 @@ async function handleFileExplorerClick(e) {
 // Open file in editor
 async function openFile(filePath, focus = true) {
   try {
-    console.log('Opening file:', filePath);
+    console.log('Attempting to open file:', filePath);
     
     // Check if file is already open
     const existingIndex = openFiles.findIndex(f => f.path === filePath);
@@ -755,6 +814,70 @@ async function openFile(filePath, focus = true) {
       return true;
     }
     
+    // First check if the file exists
+    const exists = await window.api.fileExists(filePath);
+    console.log('File exists check:', exists);
+    if (!exists) {
+      throw new Error('File does not exist');
+    }
+    
+    // Get directory contents to check file type
+    const parentDir = await window.api.path.dirname(filePath);
+    console.log('Parent directory:', parentDir);
+    const dirContents = await window.api.readDirectory(parentDir);
+    console.log('Directory contents:', dirContents);
+    
+    // Find our file in the directory contents using normalized paths
+    const normalizedFilePath = filePath.replace(/\\/g, '/');
+    console.log('Normalized file path:', normalizedFilePath);
+    
+    // Log each file path for debugging
+    dirContents.forEach(f => {
+      const normalizedFPath = (f.path || window.api.path.join(parentDir, f.name)).replace(/\\/g, '/');
+      console.log('Comparing with:', normalizedFPath);
+    });
+    
+    const targetFile = dirContents.find(f => {
+      const normalizedFPath = (f.path || window.api.path.join(parentDir, f.name)).replace(/\\/g, '/');
+      return normalizedFPath === normalizedFilePath;
+    });
+    
+    console.log('Found target file:', targetFile);
+    
+    if (!targetFile) {
+      // Try direct file read if not found in directory listing
+      console.log('File not found in directory listing, attempting direct read');
+      const content = await window.api.readFile(filePath);
+      const fileName = await window.api.path.basename(filePath);
+      
+      // Add to open files
+      const fileInfo = {
+        path: filePath,
+        name: fileName,
+        content: content,
+        isModified: false
+      };
+      
+      openFiles.push(fileInfo);
+      if (focus) {
+        switchToFile(openFiles.length - 1);
+      }
+      
+      updateTabs();
+      console.log('File opened successfully via direct read');
+      return true;
+    }
+    
+    if (targetFile.isDirectory === true) {
+      throw new Error('Cannot open a directory as a file');
+    }
+    
+    if (targetFile.isFile !== true) {
+      throw new Error('Not a valid file');
+    }
+    
+    // Read the file contents
+    console.log('Reading file contents:', filePath);
     const content = await window.api.readFile(filePath);
     const fileName = await window.api.path.basename(filePath);
     
@@ -991,7 +1114,7 @@ async function openFolder() {
         if (fileExists) {
           console.log('Found index.html, opening...');
           const stats = await window.api.getStats(indexPath);
-          if (stats && stats.isFile) {
+          if (stats && stats.isFile === true) {
             await openFile(indexPath);
           }
         } else {
@@ -1243,7 +1366,7 @@ function setupEventListeners() {
       try {
         const stats = await window.api.getStats(filePath);
         
-        if (stats.isDirectory()) {
+        if (stats.isDirectory === true) {
           // Check for unsaved changes before changing directory
           if (currentFilePath && !(await promptSaveIfNeeded())) {
             return; // User cancelled
@@ -1268,7 +1391,7 @@ function setupEventListeners() {
           } catch (innerError) {
             console.log('No index.html found or error opening it:', innerError);
           }
-        } else if (stats.isFile()) {
+        } else if (stats.isFile === true) {
           await openFile(filePath);
         }
       } catch (error) {
@@ -1364,115 +1487,77 @@ function addResizablePanels() {
 
 // Helper function to toggle directory expansion
 async function toggleDirectory(li, expand) {
-   console.log('Toggling directory:', li.dataset.path);
-   const arrow = li.querySelector('.tree-item-arrow');
-   const children = li.querySelector('.tree-children');
-   if (!arrow || !children) {
-     console.warn('Toggle elements not found for:', li.dataset.path);
-     return;
-   }
-
-   const isCollapsed = arrow.classList.contains('collapsed') || children.style.display === 'none';
-   console.log('Current state:', isCollapsed ? 'collapsed' : 'expanded');
-
-   // Determine the new state: expand === true, collapse === false, toggle === undefined
-   let newState = isCollapsed;
-   if (expand === true) newState = true;
-   else if (expand === false) newState = false;
-   // If expand is undefined, newState remains isCollapsed, so we toggle it
-   else newState = !isCollapsed;
-
-   if (newState) { // Should be expanding
-      console.log('Expanding directory:', li.dataset.path);
-      arrow.classList.remove('collapsed');
-      children.style.display = 'block';
-      li.classList.add('expanded');
-      li.querySelector('.tree-item')?.setAttribute('aria-expanded', 'true');
-
-      // Load children if not already loaded (check if only loading indicator exists)
-      if (children.children.length === 0 || (children.children.length === 1 && children.children[0].classList.contains('loading'))) {
-           console.log('Children container is empty or only has loading indicator. Loading children...');
-            // Add temporary loading indicator if not present
-           if (!children.querySelector('.loading')) {
-                const loadingItem = document.createElement('div');
-                loadingItem.className = 'loading';
-                loadingItem.textContent = 'Loading...';
-                children.innerHTML = ''; // Clear previous content before adding loading
-                children.appendChild(loadingItem);
-                 console.log('Added loading indicator for:', li.dataset.path);
-           }
-
-           try {
-               // Use dataset.depth from the current li
-               const currentDepth = parseInt(li.dataset.depth || '0', 10);
-                console.log(`Calling loadDirectoryContents for ${li.dataset.path} with depth ${currentDepth + 1}`);
-               const contents = await loadDirectoryContents(li.dataset.path, currentDepth + 1, children);
-               console.log('Directory contents loaded from loadDirectoryContents.', 'for', li.dataset.path, contents);
-
-                // Clear loading indicator
-                const loadingItem = children.querySelector('.loading');
-                if (loadingItem) {
-                    children.removeChild(loadingItem);
-                     console.log('Removed loading indicator for:', li.dataset.path);
-                }
-
-               // Clear childrenContainer before appending new contents to avoid duplicates
-               children.innerHTML = '';
-                console.log('Cleared children container for appending.');
-
-               if (contents instanceof Node) {
-                    console.log('Appending loaded contents (Node) to children container.');
-                   children.appendChild(contents);
-               } else if (contents) { // Handle the case loadDirectoryContents might return the empty div directly
-                    console.log('Appending loaded contents (other) to children container.');
-                    children.appendChild(contents);
-               } else {
-                  console.log('loadDirectoryContents returned no contents.');
-                 // If no contents and not an empty div, ensure loading is removed and maybe show empty folder message
-                  children.innerHTML = ''; // Ensure it's clear
-                   const emptyText = document.createElement('div');
-                   emptyText.className = 'empty-folder';
-                   emptyText.textContent = '(empty)';
-                   children.appendChild(emptyText);
-                    console.log('Appended empty folder message.');
-               }
-           } catch (error) {
-               console.error('Error loading directory contents:', error);
-                // Clear loading indicator
-                const loadingItem = children.querySelector('.loading');
-                if (loadingItem) {
-                    children.removeChild(loadingItem);
-                     console.log('Removed loading indicator on error for:', li.dataset.path);
-                }
-               const errorElement = document.createElement('div');
-               errorElement.className = 'error-message';
-               errorElement.textContent = `Error loading: ${error.message || 'Unknown error'}`;
-                // Clear childrenContainer before appending error
-                children.innerHTML = '';
-               children.appendChild(errorElement);
-                console.log('Appended error message to children container.');
-           }
-      } else {
-          console.log('Children already loaded for:', li.dataset.path, `Children count: ${children.children.length}`);
-          // If children are already loaded and just hidden, no need to reload.
+  console.log('Toggling directory:', li.dataset.path);
+  
+  const arrow = li.querySelector('.tree-item-arrow');
+  const children = li.querySelector('.tree-children');
+  
+  if (!arrow || !children) {
+    console.error('Missing required elements for directory toggle');
+    return;
+  }
+  
+  // Determine new state
+  const newState = expand !== undefined ? expand : !li.classList.contains('expanded');
+  
+  if (newState) { // Should be expanding
+    console.log('Expanding directory:', li.dataset.path);
+    arrow.classList.remove('collapsed');
+    children.style.display = 'block';
+    li.classList.add('expanded');
+    li.querySelector('.tree-item')?.setAttribute('aria-expanded', 'true');
+    
+    // Load children if not already loaded
+    if (children.children.length === 0 || (children.children.length === 1 && children.children[0].classList.contains('loading'))) {
+      console.log('Loading children for directory:', li.dataset.path);
+      
+      // Add loading indicator
+      const loadingItem = document.createElement('div');
+      loadingItem.className = 'loading';
+      loadingItem.textContent = 'Loading...';
+      children.innerHTML = '';
+      children.appendChild(loadingItem);
+      
+      try {
+        const currentDepth = parseInt(li.dataset.depth || '0', 10);
+        const contents = await loadDirectoryContents(li.dataset.path, currentDepth + 1, children);
+        
+        // Clear loading indicator
+        children.innerHTML = '';
+        
+        if (contents instanceof Node) {
+          children.appendChild(contents);
+        } else if (contents) {
+          children.appendChild(contents);
+        } else {
+          const emptyText = document.createElement('div');
+          emptyText.className = 'empty-folder';
+          emptyText.textContent = '(empty)';
+          children.appendChild(emptyText);
+        }
+      } catch (error) {
+        console.error('Error loading directory contents:', error);
+        children.innerHTML = '';
+        const errorElement = document.createElement('div');
+        errorElement.className = 'error-message';
+        errorElement.textContent = `Error loading: ${error.message || 'Unknown error'}`;
+        children.appendChild(errorElement);
       }
-
-   } else { // Should be collapsing
-      console.log('Collapsing directory:', li.dataset.path);
-      arrow.classList.add('collapsed');
-      children.style.display = 'none';
-      li.classList.remove('expanded');
-      li.querySelector('.tree-item')?.setAttribute('aria-expanded', 'false');
-   }
-
-   // Ensure the clicked item remains focused after toggling
-   li.querySelector('.tree-item').focus();
+    }
+  } else { // Should be collapsing
+    console.log('Collapsing directory:', li.dataset.path);
+    arrow.classList.add('collapsed');
+    children.style.display = 'none';
+    li.classList.remove('expanded');
+    li.querySelector('.tree-item')?.setAttribute('aria-expanded', 'false');
+  }
 }
 
 // Chat functionality
 function initializeChat() {
   const chatInput = document.getElementById('chat-input');
   const sendButton = document.getElementById('chat-send');
+  const chatMessages = document.getElementById('chat-messages');
 
   // Auto-resize textarea as user types
   chatInput.addEventListener('input', () => {
@@ -1494,8 +1579,9 @@ function initializeChat() {
   });
 }
 
-function sendMessage() {
+async function sendMessage() {
   const chatInput = document.getElementById('chat-input');
+  const chatMessages = document.getElementById('chat-messages');
   const message = chatInput.value.trim();
 
   if (message) {
@@ -1503,8 +1589,98 @@ function sendMessage() {
     chatInput.value = '';
     chatInput.style.height = 'auto';
 
-    // TODO: Handle the message (will be implemented later)
-    console.log('Message to send:', message);
+    // Add user message to chat
+    addMessageToChat('user', message);
+
+    try {
+      // Show loading indicator
+      const loadingId = addLoadingIndicator();
+
+      // Send message to main process for CodeLlama
+      const response = await window.api.sendToCodeLlama(message);
+
+      // Remove loading indicator
+      removeLoadingIndicator(loadingId);
+
+      // Add CodeLlama response to chat
+      addMessageToChat('assistant', response);
+    } catch (error) {
+      console.error('Error getting response from CodeLlama:', error);
+      addMessageToChat('error', 'Failed to get response from CodeLlama. Please try again.');
+    }
+  }
+}
+
+function addMessageToChat(role, content) {
+  const chatMessages = document.getElementById('chat-messages');
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `chat-message ${role}-message`;
+  
+  const roleIndicator = document.createElement('div');
+  roleIndicator.className = 'message-role';
+  roleIndicator.textContent = role === 'user' ? 'You' : 'CodeLlama';
+  
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'message-content';
+  contentDiv.textContent = content;
+  
+  messageDiv.appendChild(roleIndicator);
+  messageDiv.appendChild(contentDiv);
+  
+  // Add copy button for assistant messages
+  if (role === 'assistant') {
+    const copyButton = document.createElement('button');
+    copyButton.className = 'copy-button';
+    copyButton.textContent = 'Copy'; // Or use an SVG icon later
+    copyButton.title = 'Copy message to clipboard';
+    copyButton.addEventListener('click', () => {
+      // Use Electron's clipboard API via preload
+      if (window.api && window.api.clipboard && window.api.clipboard.writeText) {
+        window.api.clipboard.writeText(content);
+        // Optionally provide visual feedback
+        copyButton.textContent = 'Copied!';
+        setTimeout(() => {
+          copyButton.textContent = 'Copy';
+        }, 2000);
+      } else {
+        console.error('Clipboard API not available.');
+        // Fallback for browser environments (less secure)
+        // navigator.clipboard.writeText(content).then(() => { /* feedback */ }).catch(err => console.error('Failed to copy:', err));
+      }
+    });
+    messageDiv.appendChild(copyButton);
+  }
+  
+  chatMessages.appendChild(messageDiv);
+  
+  // Scroll to bottom
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function addLoadingIndicator() {
+  const chatMessages = document.getElementById('chat-messages');
+  const loadingDiv = document.createElement('div');
+  const loadingId = 'loading-' + Date.now();
+  loadingDiv.id = loadingId;
+  loadingDiv.className = 'chat-message loading-message';
+  
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'message-content';
+  contentDiv.textContent = 'CodeLlama is thinking...';
+  
+  loadingDiv.appendChild(contentDiv);
+  chatMessages.appendChild(loadingDiv);
+  
+  // Scroll to bottom
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  
+  return loadingId;
+}
+
+function removeLoadingIndicator(loadingId) {
+  const loadingDiv = document.getElementById(loadingId);
+  if (loadingDiv) {
+    loadingDiv.remove();
   }
 }
 
@@ -1512,13 +1688,11 @@ function sendMessage() {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     init();
-    initializeChat();
     // Update line numbers initially after the DOM is ready
     updateLineNumbers();
   });
 } else {
   init();
-  initializeChat();
   // Update line numbers initially if the DOM is already ready
   updateLineNumbers();
 }

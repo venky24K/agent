@@ -7,6 +7,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline';">
   <link rel="stylesheet" href="index.css" />
   <link rel="stylesheet" href="context-menu.css" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app">
@@ -123,7 +124,7 @@
           </div>
           <div class="chat-body">
             <!-- Chat messages will go here -->
-            <div class="chat-messages"></div>
+            <div id="chat-messages" class="chat-messages"></div>
           </div>
           <div class="chat-input-container">
             <textarea
@@ -144,5 +145,6 @@
     </div>
   </div>
   <script src="renderer.js"></script>
+  <script src="chat.js"></script>
 </body>
 </html>

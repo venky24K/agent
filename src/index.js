@@ -2,9 +2,29 @@ const { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut } = require('
 const path = require('node:path');
 const fs = require('fs').promises;
 const os = require('os');
+const { spawn } = require('child_process');
+const fetch = require('node-fetch');
 
 // Store windows by ID
 const windows = new Map();
+
+// Ollama API endpoint
+const OLLAMA_API = 'http://localhost:11434/api/generate';
+
+// Initialize Ollama
+async function initializeOllama() {
+  try {
+    // Check if Ollama is running
+    const response = await fetch('http://localhost:11434/api/tags');
+    if (!response.ok) {
+      throw new Error('Ollama is not running');
+    }
+    return true;
+  } catch (error) {
+    console.error('Failed to connect to Ollama:', error);
+    return false;
+  }
+}
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -67,13 +87,37 @@ const createWindow = async () => {
 // File system helpers
 async function readDirectory(directory) {
   try {
+    console.log('Reading directory:', directory);
     const files = await fs.readdir(directory, { withFileTypes: true });
-    return files.map(file => ({
-      name: file.name,
-      path: path.join(directory, file.name),
-      isDirectory: file.isDirectory(),
-      isFile: file.isFile()
-    }));
+    const result = [];
+    
+    for (const file of files) {
+      // Get the full path
+      const fullPath = path.join(directory, file.name);
+      console.log('Processing file:', file.name);
+      
+      // First check using Dirent methods
+      const isDirFromDirent = file.isDirectory();
+      const isFileFromDirent = file.isFile();
+      console.log('Dirent info:', { isDirFromDirent, isFileFromDirent });
+      
+      // Then get stats for additional info
+      const stats = await fs.stat(fullPath);
+      const isDirFromStats = stats.isDirectory();
+      const isFileFromStats = stats.isFile();
+      console.log('Stats info:', { isDirFromStats, isFileFromStats });
+      
+      // Use Dirent for type checks as it's more reliable
+      result.push({
+        name: file.name,
+        path: fullPath,
+        isDirectory: isDirFromDirent,
+        isFile: isFileFromDirent
+      });
+    }
+    
+    console.log('Directory contents:', result);
+    return result;
   } catch (error) {
     console.error('Error reading directory:', error);
     throw error;
@@ -82,7 +126,39 @@ async function readDirectory(directory) {
 
 async function getFileStats(filePath) {
   try {
-    return await fs.stat(filePath);
+    console.log('Getting stats for:', filePath);
+    const stats = await fs.stat(filePath);
+    
+    // Log raw stats object
+    console.log('Raw stats:', {
+      isDirectory: stats.isDirectory,
+      isFile: stats.isFile,
+      size: stats.size,
+      mode: stats.mode
+    });
+    
+    // Call the functions immediately to get boolean values
+    const isDir = stats.isDirectory();
+    const isFile = stats.isFile();
+    
+    console.log('Computed values:', {
+      isDirectory: isDir,
+      isFile: isFile,
+      size: stats.size
+    });
+    
+    const result = {
+      isDirectory: isDir,
+      isFile: isFile,
+      size: stats.size,
+      mtime: stats.mtime.toISOString(),
+      ctime: stats.ctime.toISOString(),
+      birthtime: stats.birthtime.toISOString(),
+      mode: stats.mode
+    };
+    
+    console.log('Returning stats:', result);
+    return result;
   } catch (error) {
     console.error('Error getting file stats:', error);
     throw error;
@@ -129,6 +205,11 @@ function setupIpcHandlers() {
   // File system operations
   ipcMain.handle('read-file', async (_, filePath) => {
     try {
+      // Check if path is a directory
+      const stats = await fs.stat(filePath);
+      if (stats.isDirectory()) {
+        throw new Error('Cannot read a directory as a file');
+      }
       return await fs.readFile(filePath, 'utf8');
     } catch (error) {
       console.error('Error reading file:', error);
@@ -265,6 +346,40 @@ function setupIpcHandlers() {
       return true;
     } catch (error) {
       console.error('Error creating project file:', error);
+      throw error;
+    }
+  });
+
+  // CodeLlama handlers
+  ipcMain.handle('send-to-codellama', async (_, message) => {
+    try {
+      // Check if Ollama is running
+      const isRunning = await initializeOllama();
+      if (!isRunning) {
+        throw new Error('Ollama is not running. Please start Ollama first.');
+      }
+
+      // Prepare the request to Ollama
+      const response = await fetch(OLLAMA_API, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'codellama',
+          prompt: message,
+          stream: false
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Ollama API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.response;
+    } catch (error) {
+      console.error('Error in send-to-codellama:', error);
       throw error;
     }
   });

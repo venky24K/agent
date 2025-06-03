@@ -59,7 +59,10 @@ contextBridge.exposeInMainWorld('api', {
   // Remove listeners
   removeAllListeners: () => {
     ipcRenderer.removeAllListeners('file-opened');
-  }
+  },
+
+  // CodeLlama integration
+  sendToCodeLlama: (message) => ipcRenderer.invoke('send-to-codellama', message)
 });
 
 // Handle errors
