@@ -1261,31 +1261,48 @@ async function handleContextMenuAction(action) {
 function setupEventListeners() {
   console.log('Setting up renderer event listeners...');
   
-  // Context menu setup
+  // Get all required elements
+  const editorTextarea = document.getElementById('editor-textarea');
+  const fileExplorer = document.getElementById('file-explorer');
+  const lineNumbers = document.getElementById('line-numbers');
+  const newProjectBtn = document.getElementById('new-project-btn');
+  const newProjectEmptyBtn = document.getElementById('new-project-empty-btn');
+  const openFolderBtn = document.getElementById('open-folder-btn');
+  const openFolderEmptyBtn = document.getElementById('open-folder-empty-btn');
   const contextMenu = document.getElementById('context-menu');
-  contextMenu.addEventListener('click', (e) => {
-    const action = e.target.closest('.context-menu-item')?.dataset.action;
-    if (action) {
-      handleContextMenuAction(action);
-      contextMenu.classList.remove('show');
-    }
-  });
 
   // Check if elements exist before adding listeners
   if (!editorTextarea || !fileExplorer || !lineNumbers || !newProjectBtn || !newProjectEmptyBtn || !openFolderBtn || !openFolderEmptyBtn) {
-      console.error('One or more elements not found in setupEventListeners, skipping listener setup.');
-      return;
+    console.error('One or more elements not found in setupEventListeners:', {
+      editorTextarea: !!editorTextarea,
+      fileExplorer: !!fileExplorer,
+      lineNumbers: !!lineNumbers,
+      newProjectBtn: !!newProjectBtn,
+      newProjectEmptyBtn: !!newProjectEmptyBtn,
+      openFolderBtn: !!openFolderBtn,
+      openFolderEmptyBtn: !!openFolderEmptyBtn
+    });
+    return;
+  }
+
+  // Context menu setup
+  if (contextMenu) {
+    contextMenu.addEventListener('click', (e) => {
+      const action = e.target.closest('.context-menu-item')?.dataset.action;
+      if (action) {
+        handleContextMenuAction(action);
+        contextMenu.classList.remove('show');
+      }
+    });
   }
 
   // New Project buttons
-  // Attach listeners to the buttons within the empty state div directly
-  document.getElementById('new-project-empty-btn').addEventListener('click', createNewProject);
-  document.getElementById('open-folder-empty-btn').addEventListener('click', openFolder);
+  newProjectEmptyBtn.addEventListener('click', createNewProject);
+  newProjectBtn.addEventListener('click', createNewProject);
 
-  // Open Folder buttons (from the header)
-  document.getElementById('open-folder-btn').addEventListener('click', openFolder);
-  // New Project button (from the header)
-  document.getElementById('new-project-btn').addEventListener('click', createNewProject);
+  // Open Folder buttons
+  openFolderEmptyBtn.addEventListener('click', openFolder);
+  openFolderBtn.addEventListener('click', openFolder);
   
   // Editor change handler
   editorTextarea.addEventListener('input', async (e) => {
@@ -1344,10 +1361,9 @@ function setupEventListeners() {
         console.log('Received open-folder action, calling openFolder()...');
         openFolder();
       }
-      // Add other shortcut actions here later if needed
     });
   } else {
-      console.log('window.api.onGlobalShortcut not available.');
+    console.log('window.api.onGlobalShortcut not available.');
   }
 
   // Handle drag and drop

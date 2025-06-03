@@ -4,6 +4,7 @@ const fs = require('fs').promises;
 const os = require('os');
 const { spawn } = require('child_process');
 const fetch = require('node-fetch');
+const { setupTerminalHandlers } = require('./terminal-handlers');
 
 // Store windows by ID
 const windows = new Map();
@@ -179,6 +180,8 @@ async function ensureDirectoryExists(dirPath) {
 
 // This method will be called when Electron has finished initialization
 app.whenReady().then(() => {
+  // Set up terminal handlers
+  setupTerminalHandlers();
   // Set up IPC handlers
   setupIpcHandlers();
   

@@ -62,7 +62,15 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   // CodeLlama integration
-  sendToCodeLlama: (message) => ipcRenderer.invoke('send-to-codellama', message)
+  sendToCodeLlama: (message) => ipcRenderer.invoke('send-to-codellama', message),
+
+  // Terminal operations
+  terminal: {
+    pwd: () => ipcRenderer.invoke('terminal:pwd'),
+    cd: (path) => ipcRenderer.invoke('terminal:cd', path),
+    ls: (args) => ipcRenderer.invoke('terminal:ls', args),
+    execute: (command) => ipcRenderer.invoke('terminal:execute', command)
+  }
 });
 
 // Handle errors

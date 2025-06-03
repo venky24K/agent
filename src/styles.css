@@ -85,7 +85,7 @@
 .copy-button:hover {
   opacity: 1;
   background-color: #4a4a4a;
-}
+} 
 
 /* Welcome Message Styles */
 .welcome-message {
@@ -260,4 +260,175 @@
   --border-color: #404040;
   --accent-color: #007acc;
   --accent-color-hover: #0098ff;
-} 
+}
+
+/* Editor Container */
+.editor-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Terminal Styles */
+.terminal-container {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--border-color);
+  min-height: 100px;
+  max-height: 80vh;
+  height: 200px;
+  resize: vertical;
+  overflow: hidden;
+}
+
+.terminal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+  flex-shrink: 0; /* Prevent header from shrinking */
+}
+
+.terminal-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.terminal-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: none;
+  border-radius: 0.25rem;
+  background-color: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.terminal-action:hover {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.terminal-content {
+  flex: 1;
+  padding: 0.5rem;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: calc(100% - 2rem);
+}
+
+.terminal-output {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-y: auto;
+  max-height: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+.terminal-output::-webkit-scrollbar {
+  width: 6px;
+}
+
+.terminal-output::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.terminal-output::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 3px;
+}
+
+#terminal-output {
+  flex: 1;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding-bottom: 0.5rem;
+}
+
+.terminal-input-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  position: sticky;
+  bottom: 0;
+  background-color: var(--bg-primary);
+  padding: 0.25rem 0;
+  flex-shrink: 0; /* Prevent input line from shrinking */
+}
+
+.terminal-prompt {
+  color: var(--accent-color);
+  user-select: none;
+}
+
+.terminal-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  outline: none;
+}
+
+/* Horizontal Gripper */
+.gripper.horizontal {
+  height: 6px;
+  cursor: row-resize;
+  background-color: var(--border-color);
+  transition: all 0.2s;
+  position: relative;
+  margin: -3px 0;
+  z-index: 10;
+}
+
+.gripper.horizontal:hover {
+  background-color: var(--accent-color);
+  height: 8px;
+  margin: -4px 0;
+}
+
+.gripper.horizontal::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 2px;
+  background-color: currentColor;
+  box-shadow: 0 -2px currentColor, 0 2px currentColor;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.gripper.horizontal:hover::after,
+.gripper.horizontal.resizing::after {
+  opacity: 0.5;
+}
+
+.gripper.horizontal.resizing {
+  background-color: var(--accent-color);
+  height: 8px;
+  margin: -4px 0;
+}
