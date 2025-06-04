@@ -5,12 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Agent</title>
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https:;">
-  <!-- Nerd Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@3.1.1/patched-fonts/JetBrainsMono/Ligatures/Regular/complete.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@3.1.1/patched-fonts/FiraCode/Regular/complete.css">
+  <!-- Load Nerd Fonts from a reliable CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/fira-code@5.0.0/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.0/index.css">
   <link rel="stylesheet" href="index.css" />
   <link rel="stylesheet" href="context-menu.css" />
   <link rel="stylesheet" href="styles.css" />
@@ -48,7 +45,10 @@
               </button>
             </div>
           </div>
-          <div id="file-explorer" class="file-explorer">
+          <div class="explorer-search">
+              <input type="text" id="explorer-search-input" placeholder="Search files and content..."/>
+          </div>
+          <div id="file-explorer" class="file-explorer" tabindex="0">
             <div class="empty-state">
               <div class="empty-state-content">
                 <div class="empty-state-icon">📁</div>
@@ -150,8 +150,8 @@
       </div>
     </div>
   </div>
-  <script src="renderer.js"></script>
+  <script src="renderer.js" type="module"></script>
   <script src="chat.js"></script>
-  <script src="terminal.js"></script>
+  <script src="terminal.js" type="module"></script>
 </body>
 </html>
