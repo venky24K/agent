@@ -320,143 +320,6 @@ function updateEmptyState(containerId, isEmpty) {
   }
 }
 
-// Helper function to get file icon based on extension
-async function getFileIcon(fileName) {
-  try {
-    const ext = await path.extname(fileName);
-    const extLower = ext.toLowerCase();
-    
-    // Nerd Fonts icons for common file types
-    const iconMap = {
-      // File types
-      '.js': '',
-      '.jsx': '',
-      '.ts': '',
-      '.tsx': '',
-      '.html': '',
-      '.css': '',
-      '.scss': '',
-      '.sass': '',
-      '.json': 'ﬥ',
-      '.md': '',
-      '.markdown': '',
-      '.gitignore': '',
-      '.gitmodules': '',
-      '.gitattributes': '',
-      '.gitkeep': '',
-      '.git': '',
-      
-      // Images
-      '.png': '',
-      '.jpg': '',
-      '.jpeg': '',
-      '.gif': '',
-      '.svg': '',
-      '.ico': '',
-      '.bmp': '',
-      '.webp': '',
-      
-      // Documents
-      '.pdf': '',
-      '.doc': '',
-      '.docx': '',
-      '.xls': '',
-      '.xlsx': '',
-      '.ppt': '',
-      '.pptx': '',
-      
-      // Archives
-      '.zip': '',
-      '.gz': '',
-      '.tar': '',
-      '.xz': '',
-      '.rar': '',
-      '.7z': '',
-      
-      // Executables
-      '.exe': '',
-      '.bat': '',
-      '.sh': '',
-      '.ps1': '',
-      
-      // Programming languages
-      '.py': '',
-      '.java': '',
-      '.c': '',
-      '.h': '',
-      '.cpp': '',
-      '.hpp': '',
-      '.go': '',
-      '.rs': '',
-      '.php': '',
-      '.rb': '',
-      '.swift': '',
-      '.kt': '',
-      '.dart': '',
-      '.lua': '',
-      '.sql': '',
-      '.yaml': '',
-      '.yml': '',
-      '.toml': '',
-      '.xml': '',
-      
-      // Other
-      '.log': '',
-      '.txt': '',
-      '.lock': '',
-      '.env': '',
-      '.dockerfile': '',
-      '.dockerignore': '',
-      '.editorconfig': '',
-      '.babelrc': 'ﬥ',
-      '.eslintrc': '',
-      '.prettierrc': '',
-      '.npmrc': '',
-      '.yarnrc': '',
-      '.bowerrc': '',
-      '.travis.yml': '',
-      '.gitlab-ci.yml': '',
-      '.github': '',
-      '.gitignore_global': '',
-      '.npmignore': '',
-      '.nvmrc': '',
-      '.node-version': '',
-      '.editorconfig': '',
-      '.browserslistrc': '',
-      '.prettierignore': '',
-      '.eslintignore': '',
-      '.stylelintrc': '',
-      '.stylelintignore': '',
-      '.babelrc.js': 'ﬥ',
-      '.babelrc.json': 'ﬥ',
-      '.babel.config.js': 'ﬥ',
-      '.babel.config.json': 'ﬥ',
-      '.eslintrc.js': '',
-      '.eslintrc.json': '',
-      '.eslintrc.yml': '',
-      '.eslintrc.yaml': '',
-      '.eslintignore': '',
-      '.prettierrc.js': '',
-      '.prettierrc.json': '',
-      '.prettierrc.yml': '',
-      '.prettierrc.yaml': '',
-      '.prettierrc.toml': '',
-      '.prettierignore': '',
-      '.stylelintrc.js': '',
-      '.stylelintrc.json': '',
-      '.stylelintrc.yml': '',
-      '.stylelintrc.yaml': '',
-      '.stylelintrc.toml': '',
-      '.stylelintignore': ''
-    };
-    
-    return iconMap[extLower] || ''; // Default file icon
-  } catch (error) {
-    console.error('Error getting file icon:', error);
-    return ''; // Default file icon on error
-  }
-}
-
 // Create a tree item element
 async function createTreeItem(name, fullPath, isDirectory, depth = 0) {
   const li = document.createElement('li');
@@ -474,27 +337,11 @@ async function createTreeItem(name, fullPath, isDirectory, depth = 0) {
   arrow.className = 'tree-item-arrow';
   arrow.innerHTML = isDirectory ? '▼' : '';
   arrow.classList.toggle('hidden', !isDirectory);
-  
-  const icon = document.createElement('span');
-  icon.className = isDirectory ? 'tree-item-icon folder-icon' : 'tree-item-icon file-icon';
-  
-  try {
-    const iconChar = isDirectory ? '' : await getFileIcon(fullPath); //  is Nerd Fonts folder icon
-    icon.textContent = iconChar;
-     if (!isDirectory) { // Add data attribute for file type icon coloring
-       const ext = await path.extname(fullPath);
-       icon.dataset.ext = ext.toLowerCase();
-     }
-  } catch (error) {
-    console.error('Error getting file icon:', error);
-    icon.textContent = isDirectory ? '📁' : '📄';
-  }
   const nameSpan = document.createElement('span');
   nameSpan.className = 'tree-item-name';
   nameSpan.textContent = name;
   
   treeItem.appendChild(arrow);
-  treeItem.appendChild(icon);
   treeItem.appendChild(nameSpan);
   li.appendChild(treeItem);
   
@@ -777,16 +624,13 @@ async function renderFileExplorer() {
     arrow.innerHTML = '▼';
     arrow.classList.remove('collapsed'); // Ensure not collapsed
 
-    const icon = document.createElement('span');
-    icon.className = 'tree-item-icon folder-icon';
-    icon.textContent = '📁';
+    // Icon removed as per user request
 
     const nameSpan = document.createElement('span');
     nameSpan.className = 'tree-item-name';
     nameSpan.textContent = dirName || 'Root';
 
     treeItem.appendChild(arrow);
-    treeItem.appendChild(icon);
     treeItem.appendChild(nameSpan);
 
     const childrenContainer = document.createElement('div');
