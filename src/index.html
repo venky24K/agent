@@ -26,13 +26,90 @@
   </style>
 </head>
 <body>
+  <!-- Layout Control Bar -->
+  <div class="layout-control-bar">
+    <div class="layout-controls">
+      <button id="layout-btn" class="layout-btn" title="Layout">
+        <svg width="16" height="16" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>
+        </svg>
+        Layout
+      </button>
+      <div id="layout-dropdown" class="layout-dropdown">
+        <div class="layout-section">
+          <div class="layout-option">
+            <label>
+              <input type="checkbox" class="panel-toggle" data-panel="explorer" checked>
+              <span>Explorer</span>
+            </label>
+            <div class="panel-position">
+              <button class="position-btn" data-panel="explorer" data-position="left" title="Left">
+                <svg width="14" height="14" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M15 5h8v14h-8z" opacity=".3"/>
+                  <path fill="currentColor" d="M1 21h4V3H1v18zM9 3h6v18H9V3zm8 0h6v18h-6V3z"/>
+                </svg>
+              </button>
+              <button class="position-btn" data-panel="explorer" data-position="right" title="Right">
+                <svg width="14" height="14" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M1 3h8v18H1z" opacity=".3"/>
+                  <path fill="currentColor" d="M15 3h6v18h-6z" opacity=".3"/>
+                  <path fill="currentColor" d="M9 21H1V3h8v18zm2-18h8v18h-8V3zm8 16V5h-6v14h6z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="layout-option">
+            <label>
+              <input type="checkbox" class="panel-toggle" data-panel="chat" checked>
+              <span>Chat</span>
+            </label>
+            <div class="panel-position">
+              <button class="position-btn" data-panel="chat" data-position="left" title="Left">
+                <svg width="14" height="14" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M15 5h8v14h-8z" opacity=".3"/>
+                  <path fill="currentColor" d="M1 21h4V3H1v18zM9 3h6v18H9V3zm8 0h6v18h-6V3z"/>
+                </svg>
+              </button>
+              <button class="position-btn" data-panel="chat" data-position="right" title="Right">
+                <svg width="14" height="14" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M1 3h8v18H1z" opacity=".3"/>
+                  <path fill="currentColor" d="M15 3h6v18h-6z" opacity=".3"/>
+                  <path fill="currentColor" d="M9 21H1V3h8v18zm2-18h8v18h-8V3zm8 16V5h-6v14h6z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="layout-option">
+            <label>
+              <input type="checkbox" class="panel-toggle" data-panel="terminal" checked>
+              <span>Terminal</span>
+            </label>
+            <div class="panel-position">
+              <button class="position-btn" data-panel="terminal" data-position="bottom" title="Bottom">
+                <svg width="14" height="14" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M3 15h18V9H3v6zm2-4h14v2H5v-2z" opacity=".3"/>
+                  <path fill="currentColor" d="M1 11h2v2H1zm0 4h2v2H1zm0-8h2v2H1zm4 4h14v2H5zm0 4h14v2H5zm0-12h14v2H5zm16 0h2v2h-2zm0 14h2v2h-2zm0-10h2v2h-2zm0 4h2v2h-2zm0 4h2v2h-2z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="layout-presets">
+          <button class="preset-btn" data-preset="default">Default</button>
+          <button class="preset-btn" data-preset="full-editor">Full Editor</button>
+          <button class="preset-btn" data-preset="terminal-focus">Terminal Focus</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
   <div class="app">
     <!-- Main workspace -->
-    <div class="workspace">
+    <div class="workspace" id="main-workspace">
       <!-- Explorer + Editor -->
       <div class="top-area">
         <!-- Explorer -->
-        <div class="explorer">
+        <div class="explorer panel-left">
           <div class="explorer-header">
             <span>EXPLORER</span>
             <div class="explorer-actions">
@@ -96,18 +173,28 @@
           <div class="gripper horizontal" id="gripper-editor-terminal"></div>
 
           <!-- Terminal -->
-          <div class="terminal-container">
+          <div class="terminal-container panel-bottom">
             <div class="terminal-header">
-              <span>TERMINAL</span>
+              <div class="terminal-tabs">
+                <div class="terminal-tab active">
+                  <span>Terminal 1</span>
+                  <span class="tab-close" title="Close">×</span>
+                </div>
+                <button class="terminal-action" id="new-terminal-tab" title="New Terminal">
+                  <svg width="14" height="14" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                  </svg>
+                </button>
+              </div>
               <div class="terminal-actions">
-                <button class="terminal-action" title="Clear Terminal">
-                  <svg width="12" height="12" viewBox="0 0 24 24">
+                <button class="terminal-action" id="terminal-clear" title="Clear Terminal">
+                  <svg width="14" height="14" viewBox="0 0 24 24">
                     <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
                   </svg>
                 </button>
-                <button class="terminal-action" title="New Terminal">
-                  <svg width="12" height="12" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                <button class="terminal-action" id="terminal-settings" title="Terminal Settings">
+                  <svg width="14" height="14" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.09-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
                   </svg>
                 </button>
               </div>
@@ -115,8 +202,22 @@
             <div class="terminal-content">
               <div id="terminal-output"></div>
               <div class="terminal-input-line">
-                <span class="terminal-prompt">$</span>
-                <input type="text" id="terminal-input" class="terminal-input" spellcheck="false" />
+                <div class="terminal-prompt">
+                  <span class="user">user</span>
+                  <span class="path">~</span>
+                  <span class="symbol">$</span>
+                </div>
+                <input type="text" id="terminal-input" class="terminal-input" spellcheck="false" placeholder="Type a command..." />
+                <div class="suggestions" id="command-suggestions"></div>
+              </div>
+            </div>
+            <div class="terminal-status-bar">
+              <div class="status-item">
+                <span class="status-indicator" id="terminal-status"></span>
+                <span id="current-command">Ready</span>
+              </div>
+              <div class="status-item">
+                <span id="terminal-cwd">~</span>
               </div>
             </div>
           </div>
@@ -126,7 +227,7 @@
         <div class="gripper" id="gripper-editor-chat"></div>
 
         <!-- Chat Panel -->
-        <div class="chat-panel">
+        <div class="chat-panel panel-right">
           <div class="chat-header">
             <span>CHAT</span>
           </div>
@@ -153,5 +254,6 @@
   <script src="renderer.js"></script>
   <script src="chat.js"></script>
   <script src="terminal.js"></script>
+  <script src="layout.js"></script>
 </body>
 </html>
