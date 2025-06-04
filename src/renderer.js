@@ -1,11 +1,10 @@
 // DOM Elements (declared as variables, but assigned in init)
-let editorTextarea;
+// Editor instance is now managed by Monaco Editor
 let fileExplorer;
 let newProjectBtn;
 let newProjectEmptyBtn;
 let openFolderBtn;
 let openFolderEmptyBtn;
-let lineNumbers;
 
 // Current file path
 let currentFilePath = null;
@@ -72,52 +71,58 @@ async function saveCurrentFile() {
     console.log('No file is currently open to save');
     return false;
   }
-      
+  
   try {
-    const content = editorTextarea.value;
-    console.log(`Saving file: ${currentFilePath}`);
-        
+    console.log('Saving file:', currentFilePath);
+    
+    // Get current content from Monaco editor
+    const content = editor ? editor.getValue() : '';
+    
+    // Save to file system
     await window.api.writeFile(currentFilePath, content);
+    
+    // Update current content
     currentContent = content;
-    isModified = false;
-        
-    // Update window title to remove modified indicator
-    const fileName = await window.api.path.basename(currentFilePath);
-    const dirName = await window.api.path.dirname(currentFilePath);
-    document.title = `${fileName} - ${dirName}`.replace(/\*+$/, '');
-        
+    
+    // Update file in open files
+    if (activeFileIndex !== -1) {
+      openFiles[activeFileIndex].content = content;
+      openFiles[activeFileIndex].isModified = false;
+      updateTabs();
+    }
+    
     console.log('File saved successfully');
     return true;
-        
   } catch (error) {
     console.error('Error saving file:', error);
-    const errorMsg = error.message || 'Failed to save the file';
-    showError('Save Failed', errorMsg);
+    showError('Save Failed', error.message || 'Failed to save file');
     return false;
   }
 }
 
 // Check if there are unsaved changes
 function hasUnsavedChanges() {
-  return isModified;
+  if (!currentFilePath) return false;
+  
+  if (activeFileIndex === -1) return false;
+  
+  const file = openFiles[activeFileIndex];
+  if (!file) return false;
+  
+  const currentContent = editor ? editor.getValue() : '';
+  return currentContent !== file.content;
 }
 
 // Prompt to save changes if needed
 async function promptSaveIfNeeded() {
-  console.log('Checking if save is needed...');
+  if (!hasUnsavedChanges()) return true;
   
-  if (!hasUnsavedChanges()) {
-    console.log('No unsaved changes, continuing...');
-    return true;
-  }
-  
-  console.log('Unsaved changes detected, showing save dialog...');
   const fileName = currentFilePath ? await window.api.path.basename(currentFilePath) : 'Untitled';
-  const shouldSave = confirm(`Save changes to ${fileName}?`);
+  const result = confirm(`Do you want to save changes to ${fileName}?`);
   
-  if (shouldSave) {
-    console.log('User chose to save, saving file...');
+  if (result) {
     try {
+      console.log('User chose to save, saving file...');
       const saved = await saveCurrentFile();
       console.log('Save result:', saved ? 'success' : 'failed');
       return saved;
@@ -129,88 +134,43 @@ async function promptSaveIfNeeded() {
     }
   } else {
     console.log('User chose not to save, discarding changes...');
+    // If user chooses not to save, reset the modified state
+    if (activeFileIndex !== -1) {
+      openFiles[activeFileIndex].isModified = false;
+      updateTabs();
+    }
     return true; // Continue without saving
   }
 }
 
-// Update line numbers
+// Update line numbers (handled by Monaco Editor)
 function updateLineNumbers() {
-  if (!editorTextarea || !lineNumbers) {
-    console.warn('Editor textarea or line numbers element not found');
-    return;
-  }
-  
-  const content = editorTextarea.value;
-  const lines = content.split('\n');
-  const lineCount = lines.length;
-  
-  // Create line numbers with proper padding
-  const maxDigits = String(lineCount).length;
-  let lineNumbersHtml = '';
-  
-  for (let i = 1; i <= lineCount; i++) {
-    // Pad the number with spaces to align all numbers properly
-    const paddedNumber = String(i).padStart(maxDigits, ' ');
-    lineNumbersHtml += paddedNumber + '\n';
-  }
-  
-  // Ensure at least one line number is shown
-  if (lineCount === 0 || (lineCount === 1 && !content)) {
-    lineNumbersHtml = '1\n';
-  }
-  
-  lineNumbers.textContent = lineNumbersHtml;
-  
-  // Update line numbers width based on the number of digits
-  const minWidth = 30; // Minimum width in pixels
-  const digitWidth = 8; // Approximate width of each digit in pixels
-  const width = Math.max(minWidth, (maxDigits * digitWidth) + 16); // 16px for padding
-  lineNumbers.style.minWidth = `${width}px`;
-  
-  // Sync scroll position
-  lineNumbers.scrollTop = editorTextarea.scrollTop;
+  // Line numbers are handled by Monaco Editor
+  // This function is kept for compatibility but does nothing
 }
 
+// Monaco Editor instance
+let editor;
+
 // Initialize
-function init() {
+async function init() {
   console.log('Initializing renderer...');
 
   // Get DOM elements here to ensure they are available after DOMContentLoaded
-  editorTextarea = document.getElementById('editor-textarea');
   fileExplorer = document.getElementById('file-explorer');
   newProjectBtn = document.getElementById('new-project-btn');
   newProjectEmptyBtn = document.getElementById('new-project-empty-btn');
   openFolderBtn = document.getElementById('open-folder-btn');
   openFolderEmptyBtn = document.getElementById('open-folder-empty-btn');
-  lineNumbers = document.getElementById('line-numbers');
 
-  console.log('Inside init - Editor Textarea element:', editorTextarea);
-  console.log('Inside init - Line Numbers element:', lineNumbers);
   console.log('Inside init - File Explorer element:', fileExplorer);
 
   // Initially show the empty state
   updateEmptyState('file-explorer', true);
 
-  // Set initial editor state
-  if (editorTextarea) {
-    editorTextarea.readOnly = true;
-    // Update placeholder to include shortcut instruction
-    const placeholderText = 'Open a file or folder to start editing (Cmd+O or Ctrl+O)';
-    editorTextarea.placeholder = placeholderText;
-    console.log('Editor placeholder set to:', placeholderText);
-    
-    // Set initial content to empty string to ensure line numbers show up
-    editorTextarea.value = '';
-    updateLineNumbers(); // This will show the initial line number
-  }
-
-  // Initialize line numbers - only if element is found
-  if (lineNumbers) {
-    updateLineNumbers();
-  } else {
-      console.warn('Line numbers element not found, skipping initial update.');
-  }
-
+  // Initialize Monaco Editor
+  await initializeEditor();
+  
   setupEventListeners(); // Call setupEventListeners after initial empty state is set
   
   // Initialize chat after all other setup is complete
@@ -219,6 +179,81 @@ function init() {
     initializeChat();
   } else {
     console.warn('Chat messages container not found, skipping chat initialization.');
+  }
+}
+
+// Initialize Monaco Editor
+async function initializeEditor() {
+  try {
+    // Load Monaco Editor
+    await new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/monaco-editor@0.36.1/min/vs/loader.js';
+      script.onload = () => {
+        require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor@0.36.1/min/vs' }});
+        require(['vs/editor/editor.main'], () => {
+          // Create editor instance
+          editor = monaco.editor.create(document.getElementById('editor'), {
+            value: '',
+            language: 'plaintext',
+            theme: 'vs-dark',
+            automaticLayout: true,
+            minimap: { enabled: true },
+            scrollBeyondLastLine: false,
+            fontSize: 14,
+            lineNumbers: 'on',
+            renderLineHighlight: 'all',
+            roundedSelection: false,
+            scrollbar: {
+              vertical: 'hidden',
+              horizontal: 'hidden',
+              handleMouseWheel: true
+            },
+            overviewRulerLanes: 0,
+            hideCursorInOverviewRuler: true,
+            overviewRulerBorder: false
+          });
+          
+          // Hide placeholder when editor gets focus
+          editor.onDidFocusEditorText(() => {
+            const placeholder = document.getElementById('editor-placeholder');
+            if (placeholder) {
+              placeholder.classList.add('hidden');
+            }
+          });
+          
+          resolve();
+        });
+      };
+      document.head.appendChild(script);
+    });
+    
+    console.log('Monaco Editor initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize Monaco Editor:', error);
+  }
+}
+
+// Update editor content with Monaco
+function updateEditorContent(content, language = 'plaintext') {
+  if (editor) {
+    const model = monaco.editor.createModel(content, language);
+    editor.setModel(model);
+    
+    // Hide placeholder when editor has content
+    showPlaceholder(content.length === 0);
+  }
+}
+
+// Show or hide the editor placeholder
+function showPlaceholder(show = true) {
+  const placeholder = document.getElementById('editor-placeholder');
+  if (placeholder) {
+    if (show) {
+      placeholder.classList.remove('hidden');
+    } else {
+      placeholder.classList.add('hidden');
+    }
   }
 }
 
@@ -868,6 +903,48 @@ async function handleFileExplorerClick(e) {
     }
 }
 
+// File type to language mapping
+const FILE_EXTENSION_TO_LANGUAGE = {
+  // Web
+  'html': 'html',
+  'css': 'css',
+  'js': 'javascript',
+  'jsx': 'javascript',
+  'ts': 'typescript',
+  'tsx': 'typescript',
+  'json': 'json',
+  // Scripts
+  'py': 'python',
+  'rb': 'ruby',
+  'php': 'php',
+  'java': 'java',
+  'c': 'c',
+  'cpp': 'cpp',
+  'cs': 'csharp',
+  'go': 'go',
+  'rs': 'rust',
+  'swift': 'swift',
+  'kt': 'kotlin',
+  // Config
+  'yaml': 'yaml',
+  'yml': 'yaml',
+  'toml': 'toml',
+  'xml': 'xml',
+  'sh': 'shell',
+  'bash': 'shell',
+  'zsh': 'shell',
+  'ps1': 'powershell',
+  'sql': 'sql',
+  'md': 'markdown',
+  'markdown': 'markdown'
+};
+
+// Get language from file extension
+function getLanguageFromExtension(filePath) {
+  const extension = filePath.split('.').pop().toLowerCase();
+  return FILE_EXTENSION_TO_LANGUAGE[extension] || 'plaintext';
+}
+
 // Open file in editor
 async function openFile(filePath, focus = true) {
   try {
@@ -889,110 +966,88 @@ async function openFile(filePath, focus = true) {
       throw new Error('File does not exist');
     }
     
-    // Get directory contents to check file type
-    const parentDir = await window.api.path.dirname(filePath);
-    console.log('Parent directory:', parentDir);
-    const dirContents = await window.api.readDirectory(parentDir);
-    console.log('Directory contents:', dirContents);
-    
-    // Find our file in the directory contents using normalized paths
-    const normalizedFilePath = filePath.replace(/\\/g, '/');
-    console.log('Normalized file path:', normalizedFilePath);
-    
-    // Log each file path for debugging
-    dirContents.forEach(f => {
-      const normalizedFPath = (f.path || window.api.path.join(parentDir, f.name)).replace(/\\/g, '/');
-      console.log('Comparing with:', normalizedFPath);
-    });
-    
-    const targetFile = dirContents.find(f => {
-      const normalizedFPath = (f.path || window.api.path.join(parentDir, f.name)).replace(/\\/g, '/');
-      return normalizedFPath === normalizedFilePath;
-    });
-    
-    console.log('Found target file:', targetFile);
-    
-    if (!targetFile) {
-      // Try direct file read if not found in directory listing
-      console.log('File not found in directory listing, attempting direct read');
-      const content = await window.api.readFile(filePath);
-      const fileName = await window.api.path.basename(filePath);
-      
-      // Add to open files
-      const fileInfo = {
-        path: filePath,
-        name: fileName,
-        content: content,
-        isModified: false
-      };
-      
-      openFiles.push(fileInfo);
-      if (focus) {
-        switchToFile(openFiles.length - 1);
-      }
-      
-      updateTabs();
-      console.log('File opened successfully via direct read');
-      return true;
-    }
-    
-    if (targetFile.isDirectory === true) {
-      throw new Error('Cannot open a directory as a file');
-    }
-    
-    if (targetFile.isFile !== true) {
-      throw new Error('Not a valid file');
-    }
-    
-    // Read the file contents
-    console.log('Reading file contents:', filePath);
+    // Read file content
     const content = await window.api.readFile(filePath);
     const fileName = await window.api.path.basename(filePath);
+    const dirName = await window.api.path.dirname(filePath);
     
-    // Add to open files
-    const fileInfo = {
-      path: filePath,
-      name: fileName,
-      content: content,
-      isModified: false
-    };
+    // Update current file path and content
+    currentFilePath = filePath;
+    currentContent = content;
     
-    openFiles.push(fileInfo);
-    if (focus) {
-      switchToFile(openFiles.length - 1);
+    // Update editor content with syntax highlighting
+    const language = getLanguageFromExtension(filePath);
+    updateEditorContent(content, language);
+    
+    // Update window title
+    document.title = `${fileName} - ${dirName}`.replace(/\*+$/, '');
+    
+    // Add to open files if not already there
+    const fileIndex = openFiles.findIndex(f => f.path === filePath);
+    if (fileIndex === -1) {
+      openFiles.push({ 
+        path: filePath, 
+        name: fileName,
+        content: content,
+        language: language,
+        isModified: false
+      });
+      activeFileIndex = openFiles.length - 1;
+    } else {
+      activeFileIndex = fileIndex;
     }
     
+    // Update tabs
     updateTabs();
-    console.log('File opened successfully');
-    return true;
     
+    // Hide placeholder
+    const placeholder = document.getElementById('editor-placeholder');
+    if (placeholder) {
+      placeholder.classList.add('hidden');
+    }
+    
+    // Highlight file in explorer
+    highlightFileInExplorer(filePath);
+    
+    // Focus editor if requested
+    if (focus && editor) {
+      editor.focus();
+    }
+    
+    console.log('File opened successfully');
   } catch (error) {
     console.error('Error opening file:', error);
-    const errorMsg = error.message || 'Failed to open file';
+    const errorMsg = error.message || 'An unknown error occurred while opening the file';
     showError('Open File Failed', errorMsg);
-    throw error;
   }
 }
 
-// Switch to a specific file tab
+// Switch to a file tab
 function switchToFile(index) {
   if (index < 0 || index >= openFiles.length) return;
   
   // Save current content if modified
   if (activeFileIndex !== -1 && openFiles[activeFileIndex]?.isModified) {
-    openFiles[activeFileIndex].content = editorTextarea.value;
+    if (editor) {
+      openFiles[activeFileIndex].content = editor.getValue();
+    }
   }
   
   activeFileIndex = index;
   const file = openFiles[index];
   
+  // Update current file path and content
   currentFilePath = file.path;
   currentContent = file.content;
-  editorTextarea.value = file.content;
-  editorTextarea.readOnly = false;
   
-  // Update line numbers
-  updateLineNumbers();
+  // Update editor content
+  updateEditorContent(file.content, file.language || 'plaintext');
+  
+  // Hide placeholder
+  const placeholder = document.getElementById('editor-placeholder');
+  if (placeholder) {
+    placeholder.classList.add('hidden');
+  }
   
   // Update window title
   document.title = `${file.name} - Agent`;
@@ -1002,6 +1057,11 @@ function switchToFile(index) {
   
   // Update tabs
   updateTabs();
+  
+  // Focus editor
+  if (editor) {
+    editor.focus();
+  }
 }
 
 // Close a file tab
@@ -1009,10 +1069,21 @@ function closeFile(index) {
   if (index < 0 || index >= openFiles.length) return;
   
   const file = openFiles[index];
+  let shouldClose = true;
+  
+  // Prompt to save changes if modified
   if (file.isModified) {
-    // TODO: Prompt to save changes
-    if (!confirm(`Save changes to ${file.name}?`)) return;
+    shouldClose = confirm(`Save changes to ${file.name}?`);
+    if (shouldClose) {
+      // Save changes
+      if (editor) {
+        file.content = editor.getValue();
+        file.isModified = false;
+      }
+    }
   }
+  
+  if (!shouldClose) return;
   
   openFiles.splice(index, 1);
   
@@ -1021,8 +1092,14 @@ function closeFile(index) {
     activeFileIndex = -1;
     currentFilePath = null;
     currentContent = '';
-    editorTextarea.value = '';
-    editorTextarea.readOnly = true;
+    
+    // Clear editor and show placeholder
+    updateEditorContent('', 'plaintext');
+    const placeholder = document.getElementById('editor-placeholder');
+    if (placeholder) {
+      placeholder.classList.remove('hidden');
+    }
+    
     document.title = 'Agent';
   } else {
     // Switch to nearest tab
@@ -1036,26 +1113,37 @@ function closeFile(index) {
 // Update the tabs UI
 function updateTabs() {
   const tabsContainer = document.getElementById('editor-tabs');
+  if (!tabsContainer) return;
+  
   tabsContainer.innerHTML = '';
   
   openFiles.forEach((file, index) => {
     const tab = document.createElement('div');
     tab.className = `editor-tab${index === activeFileIndex ? ' active' : ''}${file.isModified ? ' modified' : ''}`;
+    tab.title = file.path; // Show full path on hover
     
+    // Create tab title
     const title = document.createElement('span');
     title.className = 'editor-tab-title';
     title.textContent = file.name;
     tab.appendChild(title);
     
+    // Create close button with SVG icon
     const closeBtn = document.createElement('div');
     closeBtn.className = 'editor-tab-close';
     closeBtn.innerHTML = '<svg viewBox="0 0 16 16" width="16" height="16"><path fill="currentColor" d="M8 8.707l3.646 3.647.708-.707L8.707 8l3.647-3.646-.707-.708L8 7.293 4.354 3.646l-.707.708L7.293 8l-3.646 3.646.707.708L8 8.707z"/></svg>';
+    
+    // Add click handler to close button
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeFile(index);
+    });
+    
     tab.appendChild(closeBtn);
     
+    // Add click handler to switch tabs
     tab.addEventListener('click', (e) => {
-      if (e.target === closeBtn || closeBtn.contains(e.target)) {
-        closeFile(index);
-      } else {
+      if (e.target !== closeBtn && !closeBtn.contains(e.target)) {
         switchToFile(index);
       }
     });
@@ -1165,11 +1253,22 @@ async function openFolder() {
     currentContent = '';
     
     // Update editor state
-    editorTextarea.value = '';
-    editorTextarea.readOnly = true;
+    updateEditorContent('', 'plaintext');
+    
+    // Show placeholder
+    const placeholder = document.getElementById('editor-placeholder');
+    if (placeholder) {
+      placeholder.classList.remove('hidden');
+    }
+    
     document.title = 'Agent';
     
     try {
+      // Clear open files
+      openFiles = [];
+      activeFileIndex = -1;
+      updateTabs();
+      
       // Render the file explorer with the new directory
       await renderFileExplorer();
       
@@ -1239,8 +1338,8 @@ async function createNewProject() {
     currentDir = projectPath;
     currentFilePath = null;
     currentContent = '';
-    editorTextarea.value = '';
-    editorTextarea.readOnly = true;
+    updateEditorContent('', 'plaintext');
+    showPlaceholder();
     document.title = 'Agent';
     
     console.log('All project files created.');
@@ -1330,9 +1429,7 @@ function setupEventListeners() {
   console.log('Setting up renderer event listeners...');
   
   // Get all required elements
-  const editorTextarea = document.getElementById('editor-textarea');
   const fileExplorer = document.getElementById('file-explorer');
-  const lineNumbers = document.getElementById('line-numbers');
   const newProjectBtn = document.getElementById('new-project-btn');
   const newProjectEmptyBtn = document.getElementById('new-project-empty-btn');
   const openFolderBtn = document.getElementById('open-folder-btn');
@@ -1340,11 +1437,9 @@ function setupEventListeners() {
   const contextMenu = document.getElementById('context-menu');
 
   // Check if elements exist before adding listeners
-  if (!editorTextarea || !fileExplorer || !lineNumbers || !newProjectBtn || !newProjectEmptyBtn || !openFolderBtn || !openFolderEmptyBtn) {
+  if (!fileExplorer || !newProjectBtn || !newProjectEmptyBtn || !openFolderBtn || !openFolderEmptyBtn) {
     console.error('One or more elements not found in setupEventListeners:', {
-      editorTextarea: !!editorTextarea,
       fileExplorer: !!fileExplorer,
-      lineNumbers: !!lineNumbers,
       newProjectBtn: !!newProjectBtn,
       newProjectEmptyBtn: !!newProjectEmptyBtn,
       openFolderBtn: !!openFolderBtn,
@@ -1371,47 +1466,39 @@ function setupEventListeners() {
   // Open Folder buttons
   openFolderEmptyBtn.addEventListener('click', openFolder);
   openFolderBtn.addEventListener('click', openFolder);
-  
-  // Editor change handler
-  editorTextarea.addEventListener('input', async (e) => {
-    const newContent = e.target.value;
-    
-    // Update line numbers immediately on content change
-    updateLineNumbers();
-    
-    // Only handle auto-save if we have a current file
-    if (currentFilePath && newContent !== currentContent) {
-      currentContent = newContent;
-      
-      // Mark file as modified
-      if (activeFileIndex !== -1) {
-        openFiles[activeFileIndex].isModified = true;
-        openFiles[activeFileIndex].content = newContent;
-        updateTabs();
-      }
-      
-      // Trigger save after 1 second of no typing
-      if (saveTimeout) clearTimeout(saveTimeout);
-      saveTimeout = setTimeout(async () => {
-        try {
-          await saveCurrentFile();
-          if (activeFileIndex !== -1) {
-            openFiles[activeFileIndex].isModified = false;
-            updateTabs();
+
+  // Set up a mutation observer to detect when Monaco editor is ready
+  const observer = new MutationObserver((mutations, obs) => {
+    const editorElement = document.querySelector('.monaco-editor');
+    if (editorElement) {
+      // Monaco editor is ready
+      if (editor) {
+        // Listen for content changes
+        editor.onDidChangeModelContent(() => {
+          if (currentFilePath) {
+            const content = editor.getValue();
+            currentContent = content;
+            
+            // Mark as modified if content has changed
+            const fileIndex = openFiles.findIndex(f => f.path === currentFilePath);
+            if (fileIndex !== -1) {
+              openFiles[fileIndex].content = content;
+              openFiles[fileIndex].isModified = content !== currentContent;
+              updateTabs();
+            }
           }
-        } catch (error) {
-          console.error('Error saving file:', error);
-          showError('Save Failed', error.message);
-        }
-      }, 1000);
+        });
+      }
+      obs.disconnect(); // Stop observing once we've set up the listener
     }
   });
   
-  // Sync scroll between editor and line numbers
-  editorTextarea.addEventListener('scroll', () => {
-    lineNumbers.scrollTop = editorTextarea.scrollTop;
+  // Start observing the document body for changes
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
   });
-  
+
   // Handle file opened from main process
   if (window.api?.onFileOpened) {
     window.api.onFileOpened((content, filePath) => {
@@ -1459,8 +1546,8 @@ function setupEventListeners() {
           currentDir = filePath;
           currentFilePath = null;
           currentContent = '';
-          editorTextarea.value = '';
-          editorTextarea.readOnly = true;
+          updateEditorContent('', 'plaintext');
+          showPlaceholder();
           document.title = 'Agent';
           
           await renderFileExplorer();
