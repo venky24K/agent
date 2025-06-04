@@ -6,7 +6,6 @@ let newProjectEmptyBtn;
 let openFolderBtn;
 let openFolderEmptyBtn;
 let lineNumbers;
-let explorerSearchInput;
 
 // Current file path
 let currentFilePath = null;
@@ -66,36 +65,6 @@ let activeFileIndex = -1;
 
 // Context menu state
 let contextMenuTarget = null;
-
-// Create or get a tab for a file
-function createOrGetTab(fileName, filePath) {
-  // Check if file is already open
-  const existingIndex = openFiles.findIndex(f => f.path === filePath);
-  if (existingIndex !== -1) {
-    return openFiles[existingIndex];
-  }
-
-  // Create new file info
-  const fileInfo = {
-    path: filePath,
-    name: fileName,
-    content: '',
-    isModified: false
-  };
-
-  // Add to open files
-  openFiles.push(fileInfo);
-  updateTabs();
-  return fileInfo;
-}
-
-// Activate a tab
-function activateTab(tab) {
-  const index = openFiles.findIndex(f => f.path === tab.path);
-  if (index !== -1) {
-    switchToFile(index);
-  }
-}
 
 // Save current file
 async function saveCurrentFile() {
@@ -214,12 +183,10 @@ function init() {
   openFolderBtn = document.getElementById('open-folder-btn');
   openFolderEmptyBtn = document.getElementById('open-folder-empty-btn');
   lineNumbers = document.getElementById('line-numbers');
-  explorerSearchInput = document.getElementById('explorer-search-input');
 
   console.log('Inside init - Editor Textarea element:', editorTextarea);
   console.log('Inside init - Line Numbers element:', lineNumbers);
   console.log('Inside init - File Explorer element:', fileExplorer);
-  console.log('Inside init - Explorer Search Input element:', explorerSearchInput);
 
   // Initially show the empty state
   updateEmptyState('file-explorer', true);
@@ -901,118 +868,110 @@ async function handleFileExplorerClick(e) {
     }
 }
 
-// Add this function to check if a file is an image
-function isImageFile(filePath) {
-  const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg'];
-  return imageExtensions.some(ext => filePath.toLowerCase().endsWith(ext));
-}
-
-// Modify the openFile function to handle images
-async function openFile(filePath) {
+// Open file in editor
+async function openFile(filePath, focus = true) {
   try {
-    let content = await window.api.readFile(filePath);
-    const fileName = filePath.split('/').pop();
+    console.log('Attempting to open file:', filePath);
     
-    // Create or get tab
-    const tab = createOrGetTab(fileName, filePath);
-    activateTab(tab);
-
-    // Check if it's an image file
-    if (isImageFile(filePath)) {
-      // Ensure content is base64 for image display
-      let base64Content = '';
-      
-      if (typeof content === 'string') {
-         // Assuming string content is already base64 or a direct path/URL
-         // If it's a base64 string, use it directly.
-         // If it's a path/URL, the img src will handle it if it's accessible.
-         base64Content = content; // This might be wrong if it's just raw binary as string
-         // A more robust check for binary string could be added here if needed
-
-      } else if (content instanceof ArrayBuffer) {
-        // Convert ArrayBuffer to base64
-        base64Content = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-             // reader.result is data URL, we need the base64 part after the comma
-             const base64data = reader.result.split(',')[1];
-             resolve(base64data);
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(new Blob([content]));
-        });
-      } else if (content && typeof content === 'object' && content.type === 'Buffer') {
-         // If content is a Node.js Buffer (common in Electron)
-         // Check if toString('base64') method exists
-         if (typeof content.toString === 'function') {
-             base64Content = content.toString('base64');
-         } else {
-             console.error('Content is Buffer-like but missing toString method.');
-             // Attempt manual conversion if toString is missing (less likely scenario)
-             const uint8Array = new Uint8Array(content.data); // Assuming Buffer structure { type: 'Buffer', data: [...] }
-             base64Content = btoa(String.fromCharCode.apply(null, uint8Array));
-         }
+    // Check if file is already open
+    const existingIndex = openFiles.findIndex(f => f.path === filePath);
+    if (existingIndex !== -1) {
+      if (focus) {
+        switchToFile(existingIndex);
       }
-
-      // Create image preview container
-      const imagePreview = document.createElement('div');
-      imagePreview.className = 'image-preview';
-      
-      // Create and configure image element
-      const img = document.createElement('img');
-      // Use the determined base64 content in the data URL
-      img.src = `data:image/${getImageMimeType(filePath)};base64,${base64Content}`;
-      img.alt = fileName;
-      
-      // Add image to preview container
-      imagePreview.appendChild(img);
-      
-      // Clear and update editor content (hide text editor elements)
-      editorTextarea.style.display = 'none';
-      lineNumbers.style.display = 'none';
-      
-      // Remove any existing image preview
-      const existingPreview = document.querySelector('.image-preview');
-      if (existingPreview) {
-        existingPreview.remove();
-      }
-      
-      // Add new image preview
-      editorTextarea.parentElement.appendChild(imagePreview);
-
-    } else {
-      // Handle text files as before (show text editor elements)
-      editorTextarea.style.display = 'block';
-      lineNumbers.style.display = 'block';
-      
-      // Remove any existing image preview
-      const existingPreview = document.querySelector('.image-preview');
-      if (existingPreview) {
-        existingPreview.remove();
-      }
-      
-      editorTextarea.value = content;
-      updateLineNumbers();
+      return true;
     }
+    
+    // First check if the file exists
+    const exists = await window.api.fileExists(filePath);
+    console.log('File exists check:', exists);
+    if (!exists) {
+      throw new Error('File does not exist');
+    }
+    
+    // Get directory contents to check file type
+    const parentDir = await window.api.path.dirname(filePath);
+    console.log('Parent directory:', parentDir);
+    const dirContents = await window.api.readDirectory(parentDir);
+    console.log('Directory contents:', dirContents);
+    
+    // Find our file in the directory contents using normalized paths
+    const normalizedFilePath = filePath.replace(/\\/g, '/');
+    console.log('Normalized file path:', normalizedFilePath);
+    
+    // Log each file path for debugging
+    dirContents.forEach(f => {
+      const normalizedFPath = (f.path || window.api.path.join(parentDir, f.name)).replace(/\\/g, '/');
+      console.log('Comparing with:', normalizedFPath);
+    });
+    
+    const targetFile = dirContents.find(f => {
+      const normalizedFPath = (f.path || window.api.path.join(parentDir, f.name)).replace(/\\/g, '/');
+      return normalizedFPath === normalizedFilePath;
+    });
+    
+    console.log('Found target file:', targetFile);
+    
+    if (!targetFile) {
+      // Try direct file read if not found in directory listing
+      console.log('File not found in directory listing, attempting direct read');
+      const content = await window.api.readFile(filePath);
+      const fileName = await window.api.path.basename(filePath);
+      
+      // Add to open files
+      const fileInfo = {
+        path: filePath,
+        name: fileName,
+        content: content,
+        isModified: false
+      };
+      
+      openFiles.push(fileInfo);
+      if (focus) {
+        switchToFile(openFiles.length - 1);
+      }
+      
+      updateTabs();
+      console.log('File opened successfully via direct read');
+      return true;
+    }
+    
+    if (targetFile.isDirectory === true) {
+      throw new Error('Cannot open a directory as a file');
+    }
+    
+    if (targetFile.isFile !== true) {
+      throw new Error('Not a valid file');
+    }
+    
+    // Read the file contents
+    console.log('Reading file contents:', filePath);
+    const content = await window.api.readFile(filePath);
+    const fileName = await window.api.path.basename(filePath);
+    
+    // Add to open files
+    const fileInfo = {
+      path: filePath,
+      name: fileName,
+      content: content,
+      isModified: false
+    };
+    
+    openFiles.push(fileInfo);
+    if (focus) {
+      switchToFile(openFiles.length - 1);
+    }
+    
+    updateTabs();
+    console.log('File opened successfully');
+    return true;
+    
   } catch (error) {
     console.error('Error opening file:', error);
-    showError(`Failed to open file: ${error.message}`);
+    const errorMsg = error.message || 'Failed to open file';
+    showError('Open File Failed', errorMsg);
+    throw error;
   }
-}
-
-// Helper function to get MIME type for images
-function getImageMimeType(filePath) {
-  const ext = filePath.toLowerCase().split('.').pop();
-  const mimeTypes = {
-    'png': 'png',
-    'jpg': 'jpeg',
-    'jpeg': 'jpeg',
-    'gif': 'gif',
-    'bmp': 'bmp',
-    'webp': 'webp',
-    'svg': 'svg+xml'
-  };
-  return mimeTypes[ext] || 'png';
 }
 
 // Switch to a specific file tab
@@ -1379,10 +1338,9 @@ function setupEventListeners() {
   const openFolderBtn = document.getElementById('open-folder-btn');
   const openFolderEmptyBtn = document.getElementById('open-folder-empty-btn');
   const contextMenu = document.getElementById('context-menu');
-  const explorerSearchInput = document.getElementById('explorer-search-input');
 
   // Check if elements exist before adding listeners
-  if (!editorTextarea || !fileExplorer || !lineNumbers || !newProjectBtn || !newProjectEmptyBtn || !openFolderBtn || !openFolderEmptyBtn || !explorerSearchInput) {
+  if (!editorTextarea || !fileExplorer || !lineNumbers || !newProjectBtn || !newProjectEmptyBtn || !openFolderBtn || !openFolderEmptyBtn) {
     console.error('One or more elements not found in setupEventListeners:', {
       editorTextarea: !!editorTextarea,
       fileExplorer: !!fileExplorer,
@@ -1390,8 +1348,7 @@ function setupEventListeners() {
       newProjectBtn: !!newProjectBtn,
       newProjectEmptyBtn: !!newProjectEmptyBtn,
       openFolderBtn: !!openFolderBtn,
-      openFolderEmptyBtn: !!openFolderEmptyBtn,
-      explorerSearchInput: !!explorerSearchInput
+      openFolderEmptyBtn: !!openFolderEmptyBtn
     });
     return;
   }
@@ -1809,107 +1766,6 @@ function removeLoadingIndicator(loadingId) {
   if (loadingDiv) {
     loadingDiv.remove();
   }
-}
-
-// Function to filter the explorer tree
-async function filterExplorerTree(query) {
-  const treeItems = document.querySelectorAll('#file-explorer li');
-
-  // If query is empty, show all top-level items and hide children (default state)
-  if (!query) {
-    treeItems.forEach(item => {
-      const depth = parseInt(item.dataset.depth || '0', 10);
-      if (depth === 0) {
-        item.style.display = '';
-        const children = item.querySelector('.tree-children');
-        if (children) children.style.display = 'none';
-        const arrow = item.querySelector('.tree-item-arrow');
-        if (arrow) arrow.classList.add('collapsed');
-         item.classList.remove('expanded');
-         item.querySelector('.tree-item')?.setAttribute('aria-expanded', 'false');
-      } else {
-        item.style.display = 'none';
-      }
-    });
-     // Ensure the root is always visible and expanded if it exists
-     const rootItem = document.querySelector('#file-explorer li[data-depth="0"]');
-     if(rootItem) {
-         rootItem.style.display = '';
-         const children = rootItem.querySelector('.tree-children');
-         const arrow = rootItem.querySelector('.tree-item-arrow');
-         if (children) children.style.display = 'block';
-         if (arrow) arrow.classList.remove('collapsed');
-          rootItem.classList.add('expanded');
-          rootItem.querySelector('.tree-item')?.setAttribute('aria-expanded', 'true');
-     }
-
-    return;
-  }
-
-  // Store matching items to ensure parents are shown
-  const matchingItems = new Set();
-
-  for (const item of treeItems) {
-    const itemName = item.dataset.name.toLowerCase();
-    const itemPath = item.dataset.path;
-    const isDirectory = item.dataset.type === 'directory';
-    let matches = false;
-
-    // Check if file/folder name matches
-    if (itemName.includes(query)) {
-      matches = true;
-    }
-
-    // If it's a file and name doesn't match, check content
-    if (!matches && !isDirectory && itemPath) {
-      try {
-        // Read file content (only for non-image files)
-        if (!isImageFile(itemPath)) {
-           const content = await window.api.readFile(itemPath, { encoding: 'utf8' }); // Assuming text files are utf8
-           if (typeof content === 'string' && content.toLowerCase().includes(query)) {
-              matches = true;
-           }
-        }
-      } catch (error) {
-        console.error(`Error reading file content for search: ${itemPath}`, error);
-        // Ignore files that can't be read
-      }
-    }
-
-    if (matches) {
-      matchingItems.add(item);
-    }
-  }
-
-  // Now iterate through all items to show/hide based on matches and parent status
-  treeItems.forEach(item => {
-      if (matchingItems.has(item)) {
-          item.style.display = ''; // Show the matching item
-          // Ensure all parent directories of a matching item are visible and expanded
-          let parent = item.parentElement.closest('li[data-type="directory"]');
-          while (parent) {
-              parent.style.display = ''; // Ensure parent is visible
-               // Only expand parents if they are not the root and currently collapsed
-               if (parent.dataset.depth !== '0') { // Don't collapse/re-expand root
-                   const children = parent.querySelector('.tree-children');
-                   const arrow = parent.querySelector('.tree-item-arrow');
-                   if (children && children.style.display === 'none') {
-                      children.style.display = 'block';
-                      if (arrow) arrow.classList.remove('collapsed');
-                      parent.classList.add('expanded');
-                      parent.querySelector('.tree-item')?.setAttribute('aria-expanded', 'true');
-                   }
-               }
-              matchingItems.add(parent); // Mark parent as matching too (to ensure visibility)
-              parent = parent.parentElement.closest('li[data-type="directory"]');
-          }
-      } else {
-           // Hide items that don't match and are not parents of matching items
-           if (!matchingItems.has(item)) {
-               item.style.display = 'none';
-           }
-      }
-  });
 }
 
 // Initialize the app
