@@ -5,24 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Agent</title>
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https:;">
-  <!-- Nerd Fonts -->
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@3.1.1/patched-fonts/JetBrainsMono/Ligatures/Regular/complete.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@3.1.1/patched-fonts/FiraCode/Regular/complete.css">
+  
+  <!-- Nerd Fonts -->
+  <style>
+    /* JetBrains Mono Nerd Font */
+    @font-face {
+      font-family: 'JetBrainsMono Nerd Font';
+      src: url('https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@3.1.1/patched-fonts/JetBrainsMono/Ligatures/Regular/complete/JetBrains%20Mono%20Regular%20Nerd%20Font%20Complete.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    
+    /* FiraCode Nerd Font */
+    @font-face {
+      font-family: 'FiraCode Nerd Font';
+      src: url('https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@3.1.1/patched-fonts/FiraCode/Regular/complete/Fira%20Code%20Regular%20Nerd%20Font%20Complete.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    
+    /* Set default font families */
+    :root {
+      --font-mono: 'JetBrainsMono Nerd Font', 'JetBrains Mono', 'FiraCode Nerd Font', 'Fira Code', monospace;
+    }
+    
+    /* Apply the font to code elements */
+    code, pre, .monospace {
+      font-family: var(--font-mono);
+    }
+  </style>
   <link rel="stylesheet" href="index.css" />
   <link rel="stylesheet" href="context-menu.css" />
   <link rel="stylesheet" href="styles.css" />
   <style>
-    /* Ensure proper Font IN fallback for file/folder icons */
-    @font-face {
-      font-family: 'FiraCode Nerd Font';
-      src: local('FiraCode Nerd Font'), local('FiraCodeNerdFont-Regular'),
-           url('https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@3.1.1/patched-fonts/FiraCode/Regular/complete/Fira%20Code%20Regular%20Nerd%20Font%20Complete.ttf') format('truetype');
-      font-weight: normal;
-      font-style: normal;
-    }
+    /* Additional font styles can be added here */
   </style>
 </head>
 <body>
