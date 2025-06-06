@@ -8,10 +8,13 @@ class LayoutManager {
     
     this.isResizing = false;
     this.currentResizer = null;
+    this.resizeFrame = null;
+    this.resizeObservers = new Map();
     this.startX = 0;
     this.startY = 0;
     this.startWidth = 0;
     this.startHeight = 0;
+    this.resizeTimeout = null;
     
     this.initElements();
     this.setupEventListeners();
@@ -145,77 +148,98 @@ class LayoutManager {
     this.saveLayout();
   }
   setupResizers() {
-    // Explorer-Editor resizer
-    const explorerResizer = document.getElementById('gripper-explorer-editor');
-    if (explorerResizer) {
-      explorerResizer.addEventListener('mousedown', (e) => this.initResize(e, 'horizontal', this.elements.explorer));
-    }
+    const resizers = document.querySelectorAll('.resizer');
+    resizers.forEach(resizer => {
+      resizer.addEventListener('mousedown', (e) => {
+        this.initResize(e, resizer);
+      });
+    });
 
-    // Editor-Chat resizer
-    const chatResizer = document.getElementById('gripper-editor-chat');
-    if (chatResizer) {
-      chatResizer.addEventListener('mousedown', (e) => this.initResize(e, 'horizontal', this.elements.chatPanel, true));
-    }
-
-    // Terminal resizer
-    const terminalResizer = document.getElementById('gripper-editor-terminal');
-    if (terminalResizer) {
-      terminalResizer.addEventListener('mousedown', (e) => this.initResize(e, 'vertical'));
-    }
-
-    // Global mouse up and move events
-    document.addEventListener('mousemove', this.handleMouseMove.bind(this));
-    document.addEventListener('mouseup', this.stopResize.bind(this));
+    // Setup ResizeObserver for each panel
+    const panels = ['explorer', 'chat', 'terminal'];
+    panels.forEach(panel => {
+      const element = document.getElementById(`${panel}-panel`);
+      if (element) {
+        const observer = new ResizeObserver(entries => {
+          if (this.resizeFrame) {
+            cancelAnimationFrame(this.resizeFrame);
+          }
+          this.resizeFrame = requestAnimationFrame(() => {
+            entries.forEach(entry => {
+              if (panel === 'terminal') {
+                this.layoutState[panel].height = entry.contentRect.height;
+                document.getElementById(`${panel}-panel`).style.height = `${entry.contentRect.height}px`;
+              } else {
+                this.layoutState[panel].width = entry.contentRect.width;
+                document.getElementById(`${panel}-panel`).style.width = `${entry.contentRect.width}px`;
+              }
+            });
+          });
+        });
+        observer.observe(element);
+        this.resizeObservers.set(panel, observer);
+      }
+    });
   }
 
-
-  initResize(e, type, element, isRight = false) {
+  initResize(e, resizer) {
     this.isResizing = true;
-    this.currentResizer = type;
+    this.currentResizer = resizer;
     this.startX = e.clientX;
     this.startY = e.clientY;
     
-    if (type === 'horizontal') {
-      this.startWidth = element.offsetWidth;
-      this.isRightResize = isRight;
-    } else {
+    if (resizer.classList.contains('resizer-v')) {
       this.startHeight = this.elements.terminalContainer.offsetHeight;
+    } else {
+      this.startWidth = resizer.getBoundingClientRect().width;
     }
     
-    document.body.style.cursor = type === 'horizontal' ? 'col-resize' : 'row-resize';
+    document.body.style.cursor = resizer.classList.contains('resizer-v') ? 'row-resize' : 'col-resize';
     document.body.style.userSelect = 'none';
     e.preventDefault();
   }
 
   handleMouseMove(e) {
-    if (!this.isResizing) return;
-    
-    if (this.currentResizer === 'horizontal') {
-      const dx = e.clientX - this.startX;
-      const newWidth = this.isRightResize 
-        ? this.startWidth - dx 
-        : this.startWidth + dx;
-      
-      if (this.isRightResize && this.elements.chatPanel) {
-        this.elements.chatPanel.style.width = `${Math.max(150, newWidth)}px`;
-      } else if (this.elements.explorer) {
-        this.elements.explorer.style.width = `${Math.max(150, newWidth)}px`;
-      }
-    } else {
-      const dy = this.startY - e.clientY;
-      const newHeight = this.startHeight + dy;
-      
-      if (this.elements.terminalContainer) {
-        this.elements.terminalContainer.style.height = `${Math.max(100, newHeight)}px`;
-      }
+    if (!this.isResizing || !this.currentResizer) return;
+
+    if (this.resizeFrame) {
+      cancelAnimationFrame(this.resizeFrame);
     }
+
+    this.resizeFrame = requestAnimationFrame(() => {
+      const rect = this.currentResizer.getBoundingClientRect();
+      const isVertical = this.currentResizer.classList.contains('resizer-v');
+      
+      if (isVertical) {
+        const newHeight = e.clientY - rect.top;
+        if (newHeight > 100) {
+          this.layoutState.terminal.height = newHeight;
+          document.getElementById('terminal-panel').style.height = `${newHeight}px`;
+        }
+      } else {
+        const newWidth = e.clientX - rect.left;
+        if (newWidth > 150) {
+          if (this.currentResizer.classList.contains('resizer-r')) {
+            this.layoutState.explorer.width = newWidth;
+            document.getElementById('explorer-panel').style.width = `${newWidth}px`;
+          } else {
+            this.layoutState.chat.width = newWidth;
+            document.getElementById('chat-panel').style.width = `${newWidth}px`;
+          }
+        }
+      }
+    });
   }
 
   stopResize() {
-    if (!this.isResizing) return;
-    
+    if (this.resizeFrame) {
+      cancelAnimationFrame(this.resizeFrame);
+      this.resizeFrame = null;
+    }
     this.isResizing = false;
     this.currentResizer = null;
+    document.removeEventListener('mousemove', this.handleMouseMove);
+    document.removeEventListener('mouseup', this.stopResize);
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
     
@@ -262,6 +286,17 @@ class LayoutManager {
     if (this.elements.terminalContainer) {
       const height = localStorage.getItem('terminal-height');
       if (height) this.elements.terminalContainer.style.height = height;
+    }
+  }
+
+  cleanup() {
+    // Cleanup ResizeObservers
+    this.resizeObservers.forEach(observer => observer.disconnect());
+    this.resizeObservers.clear();
+    
+    if (this.resizeFrame) {
+      cancelAnimationFrame(this.resizeFrame);
+      this.resizeFrame = null;
     }
   }
 }

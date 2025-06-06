@@ -40,6 +40,11 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('global-shortcut', handler);
     return () => ipcRenderer.removeListener('global-shortcut', handler);
   },
+  onWindowResized: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('window-resized', handler);
+    return () => ipcRenderer.removeListener('window-resized', handler);
+  },
   
   // Path operations (handled in main process)
   path: {

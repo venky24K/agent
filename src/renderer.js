@@ -150,7 +150,8 @@ function updateLineNumbers() {
 }
 
 // Monaco Editor instance
-let editor;
+let editor = null;
+let resizeFrame = null;
 
 // Initialize
 async function init() {
@@ -169,7 +170,7 @@ async function init() {
   updateEmptyState('file-explorer', true);
 
   // Initialize Monaco Editor
-  await initializeEditor();
+  await initMonaco();
   
   setupEventListeners(); // Call setupEventListeners after initial empty state is set
   
@@ -180,58 +181,68 @@ async function init() {
   } else {
     console.warn('Chat messages container not found, skipping chat initialization.');
   }
+
+  // Handle window resize events
+  window.addEventListener('resize', () => {
+    if (editor) {
+      editor.layout();
+    }
+  });
+
+  // Listen for window-resized event from main process
+  if (window.api?.onWindowResized) {
+    window.api.onWindowResized(() => {
+      if (editor) {
+        editor.layout();
+      }
+    });
+  }
 }
 
 // Initialize Monaco Editor
-async function initializeEditor() {
-  try {
-    // Load Monaco Editor
-    await new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/monaco-editor@0.36.1/min/vs/loader.js';
-      script.onload = () => {
-        require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor@0.36.1/min/vs' }});
-        require(['vs/editor/editor.main'], () => {
-          // Create editor instance
-          editor = monaco.editor.create(document.getElementById('editor'), {
-            value: '',
-            language: 'plaintext',
-            theme: 'vs-dark',
-            automaticLayout: true,
-            minimap: { enabled: true },
-            scrollBeyondLastLine: false,
-            fontSize: 14,
-            lineNumbers: 'on',
-            renderLineHighlight: 'all',
-            roundedSelection: false,
-            scrollbar: {
-              vertical: 'hidden',
-              horizontal: 'hidden',
-              handleMouseWheel: true
-            },
-            overviewRulerLanes: 0,
-            hideCursorInOverviewRuler: true,
-            overviewRulerBorder: false
-          });
-          
-          // Hide placeholder when editor gets focus
-          editor.onDidFocusEditorText(() => {
-            const placeholder = document.getElementById('editor-placeholder');
-            if (placeholder) {
-              placeholder.classList.add('hidden');
-            }
-          });
-          
-          resolve();
-        });
-      };
-      document.head.appendChild(script);
+async function initMonaco() {
+  if (editor) return;
+
+  const editorContainer = document.getElementById('editor-container');
+  if (!editorContainer) return;
+
+  // Create editor instance
+  editor = monaco.editor.create(editorContainer, {
+    value: '',
+    language: 'javascript',
+    theme: 'vs-dark',
+    automaticLayout: false, // We'll handle layout manually
+    minimap: { enabled: false },
+    scrollBeyondLastLine: false,
+    fontSize: 14,
+    lineNumbers: 'on',
+    renderWhitespace: 'selection',
+    tabSize: 2,
+    wordWrap: 'on'
+  });
+
+  // Handle resize events efficiently
+  const resizeObserver = new ResizeObserver(entries => {
+    if (resizeFrame) {
+      cancelAnimationFrame(resizeFrame);
+    }
+    resizeFrame = requestAnimationFrame(() => {
+      editor.layout();
     });
-    
-    console.log('Monaco Editor initialized successfully');
-  } catch (error) {
-    console.error('Failed to initialize Monaco Editor:', error);
-  }
+  });
+  resizeObserver.observe(editorContainer);
+
+  // Cleanup function
+  window.addEventListener('beforeunload', () => {
+    if (resizeFrame) {
+      cancelAnimationFrame(resizeFrame);
+    }
+    resizeObserver.disconnect();
+    if (editor) {
+      editor.dispose();
+      editor = null;
+    }
+  });
 }
 
 // Update editor content with Monaco

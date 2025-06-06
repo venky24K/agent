@@ -34,6 +34,19 @@ if (require('electron-squirrel-startup')) {
 // Keep a global reference of the window object to prevent garbage collection
 let mainWindow;
 
+// Debounce function for resize handling
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
 const createWindow = async () => {
   try {
     // Create the browser window with better default size
@@ -67,16 +80,31 @@ const createWindow = async () => {
       mainWindow = null;
     });
 
+    // Add debounced resize handler
+    const debouncedResize = debounce(() => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('window-resized');
+      }
+    }, 16);
+
+    mainWindow.on('resize', debouncedResize);
+
     // Handle uncaught errors
     process.on('uncaughtException', (error) => {
       console.error('Uncaught Exception:', error);
-      dialog.showErrorBox('An error occurred', error.message);
+      // Only show dialog for non-ResizeObserver errors
+      if (!error.message.includes('ResizeObserver')) {
+        dialog.showErrorBox('An error occurred', error.message);
+      }
     });
 
     // Handle unhandled promise rejections
     process.on('unhandledRejection', (reason) => {
       console.error('Unhandled Rejection:', reason);
-      dialog.showErrorBox('An error occurred', String(reason));
+      // Only show dialog for non-ResizeObserver errors
+      if (!String(reason).includes('ResizeObserver')) {
+        dialog.showErrorBox('An error occurred', String(reason));
+      }
     });
 
   } catch (error) {
