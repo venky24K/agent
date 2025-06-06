@@ -823,8 +823,9 @@ async function openFile(filePath, focus = true) {
     const language = getLanguageFromExtension(filePath);
     updateEditorContent(content, language);
     
-    // Update window title
-    document.title = `${fileName} - ${dirName}`.replace(/\*+$/, '');
+    // Update window title with project folder name and file name
+    const projectName = await window.api.path.basename(dirName) || 'Untitled Project';
+    document.title = `${fileName} - ${projectName}`.replace(/\*+$/, '');
     
     // Add to open files if not already there
     const fileIndex = openFiles.findIndex(f => f.path === filePath);
@@ -867,7 +868,7 @@ async function openFile(filePath, focus = true) {
 }
 
 // Switch to a file tab
-function switchToFile(index) {
+async function switchToFile(index) {
   if (index < 0 || index >= openFiles.length) return;
   
   // Save current content if modified
@@ -884,8 +885,16 @@ function switchToFile(index) {
   currentFilePath = file.path;
   currentContent = file.content;
   
-  // Update editor content
-  updateEditorContent(file.content, file.language || 'plaintext');
+  // Update editor content with syntax highlighting
+  updateEditorContent(file.content, file.language);
+  
+  // Update active file index
+  activeFileIndex = index;
+  
+  // Update window title with project folder name and file name
+  const dirName = await window.api.path.dirname(file.path);
+  const projectName = await window.api.path.basename(dirName) || 'Untitled Project';
+  document.title = `${file.name} - ${projectName}`.replace(/\*+$/, '');
   
   // Hide placeholder
   const placeholder = document.getElementById('editor-placeholder');

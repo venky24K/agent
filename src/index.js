@@ -4,7 +4,6 @@ const fs = require('fs').promises;
 const os = require('os');
 const { spawn } = require('child_process');
 const fetch = require('node-fetch');
-const { setupTerminalHandlers } = require('./terminal-handlers');
 
 // Store windows by ID
 const windows = new Map();
@@ -39,12 +38,14 @@ const createWindow = async () => {
   try {
     // Create the browser window with better default size
     mainWindow = new BrowserWindow({
-      width: 1200,
-      height: 800,
-      minWidth: 800,
-      minHeight: 600,
-      backgroundColor: '#1e1e1e',
-      titleBarStyle: 'hidden',
+      width: 1250,
+      height: 750,
+      minWidth: 1000,
+      minHeight: 700,
+      backgroundColor: '#16161e',
+      titleBarStyle: 'default',
+      frame: true,
+      titleBarOverlay: false,
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
@@ -178,10 +179,7 @@ async function ensureDirectoryExists(dirPath) {
   }
 }
 
-// This method will be called when Electron has finished initialization
 app.whenReady().then(() => {
-  // Set up terminal handlers
-  setupTerminalHandlers();
   // Set up IPC handlers
   setupIpcHandlers();
   

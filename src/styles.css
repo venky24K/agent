@@ -251,10 +251,28 @@
 }
 
 /* Main Layout */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background-color: #1e1e1e;
+}
+
 .app {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* Workspace layout */
+.workspace {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
@@ -372,26 +390,71 @@
   background: #252526;
   border-bottom: 1px solid #1e1e1e;
   height: 35px;
+  min-height: 35px;
   overflow-x: auto;
-  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
+  -webkit-app-region: no-drag;
+  padding: 0 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #3e3e3e transparent;
+}
+
+.editor-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.editor-tabs::-webkit-scrollbar-thumb {
+  background-color: #3e3e3e;
+  border-radius: 2px;
+}
+
+.editor-tabs:hover::-webkit-scrollbar-thumb {
+  background-color: #5e5e5e;
 }
 
 .editor-tab {
   display: flex;
   align-items: center;
-  padding: 0 15px;
+  padding: 0 16px 0 20px;
   color: #858585;
   font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   border-right: 1px solid #1e1e1e;
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
+  height: 100%;
+  position: relative;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+  min-width: 140px;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .editor-tab.active {
   background: #1e1e1e;
   color: #ffffff;
+  font-weight: 500;
+  border-top: 1px solid #0078d4;
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
+  margin-top: -1px;
+}
+
+.editor-tab:hover {
+  background: #2d2d2d;
+}
+
+/* Modified tab indicator */
+.editor-tab.modified .editor-tab-title::after {
+  content: '•';
+  margin-left: 6px;
+  color: #569cd6;
+  font-weight: bold;
+  position: relative;
+  top: -1px;
 }
 
 .editor-tab-close {
@@ -400,7 +463,117 @@
   font-size: 14px;
   line-height: 1;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  position: relative;
+  right: -4px;
+}
+
+.editor-tab-close:hover {
+  background: #3e3e3e;
+  color: #ffffff;
+}
+
+.editor-tab:hover .editor-tab-close,
+.editor-tab.active .editor-tab-close {
+  opacity: 0.7;
+}
+
+.editor-tab:hover .editor-tab-close:hover,
+.editor-tab.active .editor-tab-close:hover {
+  opacity: 1;
+  background: #3e3e3e;
+}
+
+/* Tab content container */
+.editor-tab-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  overflow: hidden;
+  height: 100%;
+  padding: 2px 0;
+}
+
+/* Tab title with text overflow */
+.editor-tab-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 4px;
+  position: relative;
+  top: 1px;
+}
+
+/* File tabs */
+.file-tabs {
+  display: flex;
+  background-color: #252526;
+  border-bottom: 1px solid #1e1e1e;
+  height: 35px;
+  min-height: 35px;
+  overflow-x: auto;
+  -webkit-app-region: no-drag;
+  padding: 0 10px;
+}
+
+.file-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.file-tabs::-webkit-scrollbar-thumb {
+  background-color: #3e3e3e;
+  border-radius: 2px;
+}
+
+.file-tab {
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  color: #858585;
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  cursor: pointer;
+  border-right: 1px solid #1e1e1e;
+  white-space: nowrap;
+  user-select: none;
+  height: 100%;
+  position: relative;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-tab.active {
+  background-color: #1e1e1e;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.file-tab:hover:not(.active) {
+  background-color: #2d2d2d;
+}
+
+.file-tab .file-icon {
+  margin-right: 6px;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.file-tab .close-icon {
+  margin-left: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 .editor-tab:hover .editor-tab-close {
@@ -861,10 +1034,6 @@
   border-radius: 4px;
 }
 
-#terminal-output::-webkit-scrollbar-thumb {
-  background: #444;
-  border-radius: 4px;
-}
 
 #terminal-output::-webkit-scrollbar-thumb:hover {
   background: #555;
