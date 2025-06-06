@@ -266,14 +266,16 @@ html, body {
   overflow: hidden;
   margin: 0;
   padding: 0;
+  position: relative;
 }
 
 /* Workspace layout */
 .workspace {
-  height: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
 }
 
 .workspace {
@@ -1204,4 +1206,45 @@ html, body {
   background-color: var(--accent-color);
   height: 8px;
   margin: -4px 0;
+}
+
+/* Status Bar Styles */
+.status-bar {
+  height: 22px;
+  background-color: #007acc;
+  color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 12px;
+  font-family: 'Fira Code', 'JetBrains Mono', monospace;
+  border-top: 1px solid #0e639c;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.status-bar-left,
+.status-bar-right {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.status-bar-item {
+  margin: 0 6px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.status-bar-item:not(:last-child) {
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  padding-right: 10px;
+}
+
+#cursor-position {
+  padding: 0 8px;
 }
