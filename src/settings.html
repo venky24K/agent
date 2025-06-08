@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      margin: 0;
+      padding: 20px;
+      color: #e0e0e0;
+      background-color: #1e1e1e;
+    }
+    
+    .settings-container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    
+    .settings-header {
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #333;
+    }
+    
+    .settings-header h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 500;
+    }
+    
+    .settings-section {
+      margin-bottom: 30px;
+      background: #252526;
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    }
+    
+    .settings-section-header {
+      padding: 12px 16px;
+      background: #2d2d2d;
+      border-bottom: 1px solid #333;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .settings-section-header h2 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .settings-section-content {
+      padding: 16px;
+    }
+    
+    .setting-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .setting-label {
+      width: 200px;
+      font-size: 13px;
+    }
+    
+    .setting-control {
+      flex: 1;
+    }
+    
+    select, input[type="text"], input[type="number"] {
+      background: #333;
+      border: 1px solid #3c3c3c;
+      color: #e0e0e0;
+      padding: 6px 8px;
+      border-radius: 4px;
+      width: 100%;
+      max-width: 300px;
+    }
+    
+    select:focus, input[type="text"]:focus, input[type="number"]:focus {
+      outline: none;
+      border-color: #0078d7;
+      box-shadow: 0 0 0 1px #0078d7;
+    }
+    
+    .setting-description {
+      font-size: 12px;
+      color: #a0a0a0;
+      margin-top: 4px;
+    }
+    
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+    }
+    
+    .checkbox-container input[type="checkbox"] {
+      margin-right: 8px;
+    }
+  </style>
+</head> 
+<body>
+  <div class="settings-container">
+    <div class="settings-header">
+      <h1>Settings</h1>
+    </div>
+    
+    <!-- settings page is now created with a modern design and functionality. -->
+     
+    <div class="settings-section">
+      <div class="settings-section-header">
+        <h2>Editor</h2>
+      </div>
+      <div class="settings-section-content">
+        <div class="setting-item">
+          <div class="setting-label">Font Family</div>
+          <div class="setting-control">
+            <select id="editor-font-family">
+              <option value="'JetBrains Mono', 'Fira Code', monospace">JetBrains Mono</option>
+              <option value="'Fira Code', monospace">Fira Code</option>
+              <option value="'Courier New', monospace">Courier New</option>
+              <option value="Consolas, monospace">Consolas</option>
+              <option value="'Source Code Pro', monospace">Source Code Pro</option>
+            </select>
+            <div class="setting-description">The font family for the editor</div>
+          </div>
+        </div>
+        
+        <div class="setting-item">
+          <div class="setting-label">Font Size</div>
+          <div class="setting-control">
+            <input type="number" id="editor-font-size" min="8" max="36" value="14">
+            <div class="setting-description">The font size in pixels</div>
+          </div>
+        </div>
+        
+        <div class="setting-item">
+          <div class="setting-label">Tab Size</div>
+          <div class="setting-control">
+            <input type="number" id="editor-tab-size" min="1" max="8" value="2">
+            <div class="setting-description">The number of spaces for a tab</div>
+          </div>
+        </div>
+        
+        <div class="setting-item">
+          <div class="setting-label">Insert Spaces</div>
+          <div class="setting-control">
+            <div class="checkbox-container">
+              <input type="checkbox" id="editor-insert-spaces" checked>
+              <label for="editor-insert-spaces">Insert spaces when pressing Tab</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="settings-section">
+      <div class="settings-section-header">
+        <h2>Theme</h2>
+      </div>
+      <div class="settings-section-content">
+        <div class="setting-item">
+          <div class="setting-label">Color Theme</div>
+          <div class="setting-control">
+            <select id="editor-theme">
+              <option value="vs-dark">Dark (Visual Studio Dark)</option>
+              <option value="vs">Light (Visual Studio Light)</option>
+              <option value="hc-black">High Contrast Dark</option>
+              <option value="hc-light">High Contrast Light</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="settings-section">
+      <div class="settings-section-header">
+        <h2>Files</h2>
+      </div>
+      <div class="settings-section-content">
+        <div class="setting-item">
+          <div class="setting-label">Auto Save</div>
+          <div class="setting-control">
+            <select id="files-auto-save">
+              <option value="off">Off</option>
+              <option value="afterDelay" selected>After Delay</option>
+              <option value="onFocusChange">On Focus Change</option>
+              <option value="onWindowChange">On Window Change</option>
+            </select>
+            <div class="setting-description">Controls auto save of dirty files</div>
+          </div>
+        </div>
+        
+        <div class="setting-item">
+          <div class="setting-label">Auto Save Delay (ms)</div>
+          <div class="setting-control">
+            <input type="number" id="files-auto-save-delay" min="100" max="10000" step="100" value="1000">
+            <div class="setting-description">Delay in milliseconds after which a dirty file is saved automatically</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Settings will be loaded and saved here
+    document.addEventListener('DOMContentLoaded', () => {
+      // Load saved settings
+      const settings = JSON.parse(localStorage.getItem('editor-settings') || '{}');
+      
+      // Apply settings to form
+      if (settings.fontFamily) document.getElementById('editor-font-family').value = settings.fontFamily;
+      if (settings.fontSize) document.getElementById('editor-font-size').value = settings.fontSize;
+      if (settings.tabSize) document.getElementById('editor-tab-size').value = settings.tabSize;
+      if (settings.insertSpaces !== undefined) document.getElementById('editor-insert-spaces').checked = settings.insertSpaces;
+      if (settings.theme) document.getElementById('editor-theme').value = settings.theme;
+      if (settings.autoSave) document.getElementById('files-auto-save').value = settings.autoSave;
+      if (settings.autoSaveDelay) document.getElementById('files-auto-save-delay').value = settings.autoSaveDelay;
+      
+      // Save settings when changed
+      const inputs = document.querySelectorAll('input, select');
+      inputs.forEach(input => {
+        input.addEventListener('change', saveSettings);
+      });
+      
+      // Notify parent window when settings change
+      function saveSettings() {
+        const newSettings = {
+          fontFamily: document.getElementById('editor-font-family').value,
+          fontSize: parseInt(document.getElementById('editor-font-size').value, 10),
+          tabSize: parseInt(document.getElementById('editor-tab-size').value, 10),
+          insertSpaces: document.getElementById('editor-insert-spaces').checked,
+          theme: document.getElementById('editor-theme').value,
+          autoSave: document.getElementById('files-auto-save').value,
+          autoSaveDelay: parseInt(document.getElementById('files-auto-save-delay').value, 10)
+        };
+        
+        // Save to localStorage
+        localStorage.setItem('editor-settings', JSON.stringify(newSettings));
+        
+        // Notify parent window
+        if (window.parent) {
+          window.parent.postMessage({
+            type: 'settings-updated',
+            settings: newSettings
+          }, '*');
+        }
+      }
+    });
+  </script>
+</body>
+</html>
